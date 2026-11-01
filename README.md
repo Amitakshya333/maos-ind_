@@ -14,7 +14,8 @@ engine binary, no credentials, and no model runtimes.
 
 Target event repo (public, empty, created 2026-10-29T12:40:37Z, verified
 2026-10-31): `https://github.com/Amitakshya333/maos-ind_.git`
-Published there as the first commit on 2026-11-01. No further tags will
+Published there as the first commit on 2026-11-01.
+**Line endings matter.** `scripts/apply-event-patches.ps1` hashes the patch files byte-for-byte, so a checkout that converts LF to CRLF will fail the script closed. The event repo ships a `.gitattributes` pinning LF for `*.patch`, `*.ps1`, `*.csv`, and the notice texts. If you override that (or copy the patches out of the repo), the apply script refuses to run. No further tags will
 be created from staging.
 
 ## Gates
