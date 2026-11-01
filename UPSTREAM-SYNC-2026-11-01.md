@@ -16,6 +16,14 @@ The submission still pins the Core base `f9525055c56a7f7771dd2fa029c147c2960a98a
 `2cfdf9b`). Reviewers follow README.md §2–§3 and UPSTREAM.md. The advance of public
 `main` does not change the judged build.
 
+## Review record (Task R, 2026-11-01) — 4 minor findings
+
+Full review: `review-packets/core-review-d324129-f54dd7e-2026-11-01/REVIEW.md`. Verdict: no blockers, no majors.
+- **F1a (attribution):** `d324129` reformats its 12 files with the repo prettier config. 8 of 9 FIX-16 files differ byte-wise from the reviewed packet solely by formatting (proven: `prettier(FIX-16 bytes) == committed bytes`, committed prettier-clean). Content is equivalent; no unreviewed logic. Future audits should normalize with prettier before comparing.
+- **F1b (traceability):** the `d324129` message names only the selection-binding work but also bundles the engine-indicator change (`Header.tsx`, `layout.css`, `ui1-25` test; 3 of 12 files). That bundle is the reviewed engine-indicator candidate.
+- **F3 (scope):** `f54dd7e` removes 17 lockfile entries, not only `simple-git` and `@simple-git/argv-parser`. The 12 extra are orphan pruning (`detect-libc` plus 11 `lightningcss-<platform>` entries with zero dependents). Verified behavior-neutral; no version changes in retained entries.
+- **F4 (open):** `npm-cache-manifest.json` was not regenerated, so `validateNpmStore` keeps reporting the store as invalid. This is pre-existing and test-pinned (`tests/f2-04-offline-stores.test.ts` expects invalid). Regeneration is an open item, not a demo blocker.
+
 ## Order note
 `UPSTREAM.md` describes the pre-advance state (main was `256befbb`). This file is the
 later record. Where they disagree, this file wins.
