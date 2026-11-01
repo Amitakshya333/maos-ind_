@@ -29,3 +29,8 @@
   `repository.url`) still 404 — stale metadata, do not use.
 
 Fetch commands: README §2. Chain: `PATCH_MANIFEST.md`.
+
+## Later state (2026-11-01) — see UPSTREAM-SYNC-2026-11-01.md
+
+This file describes the pre-advance state (public main was `256befbb`).
+UPSTREAM-SYNC-2026-11-01.md is the later record; where they disagree, that file wins.
