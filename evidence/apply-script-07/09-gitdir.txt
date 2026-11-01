@@ -1,0 +1,51 @@
+﻿CASE: 09-gitdir
+DATE: 2026-10-31T21:24:16.7875929+05:30
+SCRIPT-SHA256: 2B8674AA323C98ABDD9E5A54FDCBFF61332E715286CA690CC9BD530DA5C256A7
+PATCH-SHA256: 0001=40777EE7EA4EDBF534377BBE3012EAD6B2588B6B070681F1686003C699C03DD6 0002=EB68E07BCE21E9AC9D5245274BC5FCEA787C0A2AE6EC7810E756F933B764D0EC 0003=99FBF264719871D0B25F4075FDFABA8D881963B0AC5AF0749095D06613E4ABE4
+GIT: git version 2.53.0.windows.1
+TARGET: C:\maos\.clone-scratch-07\c-hashbase
+SCRIPT: C:\maos\event-staging-2026-10-31\scripts\apply-event-patches.ps1
+---BEFORE---
+CMD: git -C <target> rev-parse HEAD
+f9525055c56a7f7771dd2fa029c147c2960a98a3
+CMD: git -C <target> rev-parse --git-path index
+.git/index
+CMD: git -C <target> rev-parse --path-format=absolute --git-path index
+C:/maos/.clone-scratch-07/c-hashbase/.git/index
+CMD: git -C <target> status --porcelain
+
+CMD: git -C <target> diff --cached --quiet HEAD -- (exit code only)
+index-vs-head-exit:0
+AMBIENT: GIT_DIR=C:\bogus\repo.git
+CMD: powershell.exe -NoProfile -NonInteractive -File "C:\maos\event-staging-2026-10-31\scripts\apply-event-patches.ps1" -CorePath "C:\maos\.clone-scratch-07\c-hashbase"
+EXIT: 1
+---STDOUT---
+
+---STDERR---
+Refusing to run with GIT_DIR set in the environment ('C:\bogus\repo.git'): 
+every git inspection in this script must target the given checkout's real 
+repository and index. Unset it and retry; nothing was inspected or changed.
+At C:\maos\event-staging-2026-10-31\scripts\apply-event-patches.ps1:28 
+char:17
++ ... if ($val) { throw "Refusing to $action with $v set in the 
+environment ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Refusing to run...ted or  
+   changed.:String) [], RuntimeException
+    + FullyQualifiedErrorId : Refusing to run with GIT_DIR set in the envi 
+   ronment ('C:\bogus\repo.git'): every git inspection in this script mus  
+  t target the given checkout's real repository and index. Unset it and    
+ retry; nothing was inspected or changed.
+---AFTER---
+CMD: git -C <target> rev-parse HEAD
+f9525055c56a7f7771dd2fa029c147c2960a98a3
+CMD: git -C <target> rev-parse --git-path index
+.git/index
+CMD: git -C <target> rev-parse --path-format=absolute --git-path index
+C:/maos/.clone-scratch-07/c-hashbase/.git/index
+CMD: git -C <target> status --porcelain
+
+CMD: git -C <target> diff --cached --quiet HEAD -- (exit code only)
+index-vs-head-exit:0
+EXPECTED: exit 1, contains "GIT_DIR", must not contain "Applied overlays 0001-0003"
+OBSERVED: PASS

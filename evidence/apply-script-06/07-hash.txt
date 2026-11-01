@@ -1,0 +1,48 @@
+﻿CASE: 07-hash
+DATE: 2026-10-31T20:19:37.1702187+05:30
+SCRIPT-SHA256: 8CB2F8031ADDF939209005B094EC412DE21203414C8F36DC12936CD506693044
+PATCH-SHA256: 0001=40777EE7EA4EDBF534377BBE3012EAD6B2588B6B070681F1686003C699C03DD6 0002=EB68E07BCE21E9AC9D5245274BC5FCEA787C0A2AE6EC7810E756F933B764D0EC 0003=99FBF264719871D0B25F4075FDFABA8D881963B0AC5AF0749095D06613E4ABE4
+GIT: git version 2.53.0.windows.1
+TARGET: C:\maos\.worktrees\apply07-hashbase
+SCRIPT: C:\maos\.worktrees\script07-scratch\scripts\apply-event-patches.ps1
+---BEFORE---
+CMD: git -C <target> rev-parse HEAD
+f9525055c56a7f7771dd2fa029c147c2960a98a3
+CMD: git -C <target> rev-parse --git-path index
+C:/maos/.git/worktrees/apply07-hashbase/index
+CMD: git -C <target> status --porcelain
+
+CMD: git -C <target> diff --cached --quiet HEAD -- (exit code only)
+index-vs-head-exit:0
+CMD: powershell.exe -NoProfile -NonInteractive -File "C:\maos\.worktrees\script07-scratch\scripts\apply-event-patches.ps1" -CorePath "C:\maos\.worktrees\apply07-hashbase"
+EXIT: 1
+---STDOUT---
+
+---STDERR---
+Patch mismatch: 0002-meta-provider-and-bounded-agent.patch SHA-256 
+a60aaa285ce896d237e77a4364701ddc60737075c699f08fdfb3d9cf1b955f7d does not 
+match manifest 
+eb68e07bce21e9ac9d5245274bc5fcea787c0a2ae6ec7810e756f933b764d0ec. Nothing 
+was applied.
+At C:\maos\.worktrees\script07-scratch\scripts\apply-event-patches.ps1:81 
+char:32
++ ... p.Sha256) { throw "Patch mismatch: $($p.File) SHA-256 $actual does 
+no ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Patch mismatch:...ng was  
+   applied.:String) [], RuntimeException
+    + FullyQualifiedErrorId : Patch mismatch: 0002-meta-provider-and-bound 
+   ed-agent.patch SHA-256 a60aaa285ce896d237e77a4364701ddc60737075c699f08  
+  fdfb3d9cf1b955f7d does not match manifest eb68e07bce21e9ac9d5245274bc5   
+ fcea787c0a2ae6ec7810e756f933b764d0ec. Nothing was applied.
+---AFTER---
+CMD: git -C <target> rev-parse HEAD
+f9525055c56a7f7771dd2fa029c147c2960a98a3
+CMD: git -C <target> rev-parse --git-path index
+C:/maos/.git/worktrees/apply07-hashbase/index
+CMD: git -C <target> status --porcelain
+
+CMD: git -C <target> diff --cached --quiet HEAD -- (exit code only)
+index-vs-head-exit:0
+EXPECTED: exit 1, contains "Patch mismatch", must not contain "Applied overlays 0001-0003"
+OBSERVED: PASS

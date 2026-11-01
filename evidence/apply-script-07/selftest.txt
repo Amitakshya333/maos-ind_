@@ -1,0 +1,16 @@
+﻿CASE: selftest (durable regression test execution, attempt 2)
+DATE: 2026-10-31T21:23:56.1204719+05:30
+NOTE: attempt 1 failed on a test-harness stderr-handling bug (fixed in the test; product untouched) — see selftest-attempt1-harness-bug.txt
+CMD: test-apply-script.ps1 -CoreRepo C:\maos -WorkRoot C:\maos\.clone-scratch-07\selftest
+EXIT: 0
+---STDOUT---
+PASS: clone-positive-exit-0
+PASS: clone-positive-tree
+PASS: clone-idempotent
+PASS: clone-staged-refusal
+PASS: clone-envguard-refusal
+PASS: clone-wrongbase-refusal
+PASS: worktree-positive
+RESULT: PASS (all 6 checks)
+---STDERR---
+

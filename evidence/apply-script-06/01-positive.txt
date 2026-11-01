@@ -1,0 +1,148 @@
+﻿CASE: 01-positive
+DATE: 2026-10-31T20:19:14.3253694+05:30
+SCRIPT-SHA256: 8CB2F8031ADDF939209005B094EC412DE21203414C8F36DC12936CD506693044
+PATCH-SHA256: 0001=40777EE7EA4EDBF534377BBE3012EAD6B2588B6B070681F1686003C699C03DD6 0002=EB68E07BCE21E9AC9D5245274BC5FCEA787C0A2AE6EC7810E756F933B764D0EC 0003=99FBF264719871D0B25F4075FDFABA8D881963B0AC5AF0749095D06613E4ABE4
+GIT: git version 2.53.0.windows.1
+TARGET: C:\maos\.worktrees\apply07-pos
+SCRIPT: C:\maos\event-staging-2026-10-31\scripts\apply-event-patches.ps1
+---BEFORE---
+CMD: git -C <target> rev-parse HEAD
+f9525055c56a7f7771dd2fa029c147c2960a98a3
+CMD: git -C <target> rev-parse --git-path index
+C:/maos/.git/worktrees/apply07-pos/index
+CMD: git -C <target> status --porcelain
+
+CMD: git -C <target> diff --cached --quiet HEAD -- (exit code only)
+index-vs-head-exit:0
+CMD: powershell.exe -NoProfile -NonInteractive -File "C:\maos\event-staging-2026-10-31\scripts\apply-event-patches.ps1" -CorePath "C:\maos\.worktrees\apply07-pos"
+EXIT: 0
+---STDOUT---
+Applied overlays 0001-0003 to disposable Core checkout C:\maos\.worktrees\apply07-pos; tree verifies exactly against event tip 2cfdf9b81f56eada7df2041625da18e44531151e. No commit was created.
+---STDERR---
+
+---AFTER---
+CMD: git -C <target> rev-parse HEAD
+f9525055c56a7f7771dd2fa029c147c2960a98a3
+CMD: git -C <target> rev-parse --git-path index
+C:/maos/.git/worktrees/apply07-pos/index
+CMD: git -C <target> status --porcelain
+M .npmignore
+ M README.md
+ M demo/industrial/PRESENTATION_SCRIPT.md
+ M demo/industrial/RUNBOOK.md
+ M package.json
+ M profiles/industrial/maos.config.json
+ M src/api/middleware.ts
+ M src/api/openapi-spec.ts
+ M src/api/router.ts
+ M src/api/server.ts
+ M src/backends/anthropic-provider.ts
+ M src/backends/api-runtime.ts
+ M src/backends/factory.ts
+ M src/backends/openai-provider.ts
+ M src/backends/provider.ts
+ M src/backends/runtime.ts
+ M src/cli/configure.ts
+ M src/cli/dashboard-template.ts
+ M src/cli/dashboard.ts
+ M src/cli/doctor.ts
+ M src/cli/index.ts
+ M src/cli/plan.ts
+ M src/cli/repl.ts
+ M src/core/agent-runner.ts
+ M src/core/checkpoint.ts
+ M src/core/credentials.ts
+ M src/core/event-store.ts
+ M src/core/idempotency-store.ts
+ M src/core/objective-store.ts
+ M src/core/orchestrator.ts
+ M src/core/queue.ts
+ M src/core/retry-queue.ts
+ M src/domain/office-artifact.ts
+ M src/domain/schemas.ts
+ M src/gui/src/App.tsx
+ M src/gui/src/api/adapter.ts
+ M src/gui/src/api/errors.ts
+ M src/gui/src/api/event-client.ts
+ M src/gui/src/api/rest-client.ts
+ M src/gui/src/components/ActivityBar.tsx
+ M src/gui/src/components/Header.tsx
+ M src/gui/src/components/NavigationSidebar.tsx
+ M src/gui/src/components/StatusBar.tsx
+ M src/gui/src/components/TelemetryReviewPanel.tsx
+ M src/gui/src/main.tsx
+ M src/gui/src/views/ApprovalsView.tsx
+ M src/gui/src/views/CockpitView.tsx
+ M src/gui/src/views/DocumentsView.tsx
+ M src/industrial/atomic-cleanup-coordinator.ts
+ M src/industrial/deterministic-reset.ts
+ M src/industrial/industrial-cli.ts
+ M src/industrial/judged-run.ts
+ M src/industrial/lifecycle.ts
+ M src/industrial/rust-engine-bridge.ts
+ M src/industrial/service-startup.ts
+ M src/industrial/telemetry-analysis.ts
+ M src/integrations/tools.ts
+ M src/service/artifact-service.ts
+ M src/service/docx-generator-service.ts
+ M src/service/index.ts
+ M src/service/project-service/entrypoint.ts
+ M src/service/retention-service.ts
+ M src/service/sovereignty-bundle-service.ts
+ M src/service/task-service.ts
+ M src/service/workflow-planning-service.ts
+ M src/service/workflow-service.ts
+ M src/utils/paths.ts
+ M tests/f2-08-lifecycle.test.ts
+ M tests/f3-01-services.test.ts
+ M tests/f3-03-rest-contract.test.ts
+ M tests/f3-05-artifact-store.test.ts
+ M tests/f3-07-verifier-idempotency.test.ts
+ M tests/gui/ui1-01-spa-shell.test.ts
+ M tests/gui/ui1-02-api-clients.test.ts
+ M tests/gui/ui1-04-launcher-handshake.test.ts
+ M tests/gui/ui1-10-evidence-retention.test.ts
+ M tests/gui/ui1-24-one-project-v1-1.test.ts
+ M tests/industrial/f10-02-dashboard-trigger.test.ts
+ M tests/industrial/f10-05-deterministic-reset.test.ts
+ M tests/industrial/f10-06-judged-run.test.ts
+ M tests/industrial/f7-03-workflow-planning.test.ts
+ M tests/industrial/f9-08-interruption-atomic-cleanup.test.ts
+ M tests/industrial/f9-09-disconnected-full-rehearsal.test.ts
+ M tests/industrial/gate-g9-sovereignty-gate.test.ts
+ M tests/industrial/telemetry-analysis.test.ts
+?? desktop/
+?? docs/INSTALLATION.md
+?? docs/MAOS_INDUSTRIAL_OPERATOR_GUIDE.md
+?? scripts/Install-MaosIndustrial.ps1
+?? scripts/New-MaosIndustrialInstallBundle.ps1
+?? scripts/Start-BasetenSyntheticPilot.ps1
+?? scripts/Windows-ProcessTree.ps1
+?? scripts/prepare-hooks.js
+?? src/backends/meta-api-policy.ts
+?? src/domain/industrial-analysis-agent.ts
+?? src/gui/src/native.d.ts
+?? src/industrial/analysis-agent-service.ts
+?? src/industrial/entrypoint.ts
+?? src/industrial/industrial-repl.ts
+?? src/industrial/judged-run-lock.ts
+?? src/utils/project-git-context.ts
+?? tests/backends/
+?? tests/cli/
+?? tests/core/
+?? tests/gui/ui1-25-truthful-readiness.test.ts
+?? tests/gui/ui1-27-native-launcher-bridge.test.ts
+?? tests/industrial/analysis-agent-auth-http.test.ts
+?? tests/industrial/analysis-agent-contract.test.ts
+?? tests/industrial/analysis-agent-service.test.ts
+?? tests/industrial/baseten-pilot-process-tree.test.ts
+?? tests/industrial/industrial-repl.test.ts
+?? tests/industrial/judged-run-lock.test.ts
+?? tests/industrial/meta-model-api-contract.test.ts
+?? tests/industrial/package-runtime-assets.test.ts
+?? tests/release/
+CMD: git -C <target> diff --cached --quiet HEAD -- (exit code only)
+index-vs-head-exit:0
+EXPECTED: exit 0, contains "Applied overlays 0001-0003", must not contain "Result mismatch"
+OBSERVED: PASS
+INDEPENDENT-CONFIRMATION (post-run, disposable copy): add -A + write-tree = 53305f48e6a7fb039bcf72fa38ab102bcccb9cb8; expected tip tree 53305f48e6a7fb039bcf72fa38ab102bcccb9cb8; match=True

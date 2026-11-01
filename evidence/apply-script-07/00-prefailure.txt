@@ -1,0 +1,26 @@
+﻿CASE: 00-prefailure (pre-fix reproduction, UNFIXED script 8CB2F803)
+DATE: 2026-10-31T21:21:06.7528595+05:30
+TARGET (normal clone): C:\maos\.clone-scratch-07\pre
+---BEFORE---
+HEAD: f9525055c56a7f7771dd2fa029c147c2960a98a3
+git-path index: .git/index
+status-lines: 0
+EXIT: 1
+---STDOUT+STDERR---
+Refusing to verify 0001-industrial-agent-workflow.patch: git resolves the 
+index to '.git/index' instead of the checkout's real index 
+'C:\maos\.clone-scratch-07\pre\.git\index'. Unset GIT_INDEX_FILE and retry.
+At C:\maos\event-staging-2026-10-31\scripts\apply-event-patches.ps1:59 
+char:5
++     throw "Refusing to verify ${stage}: git resolves the index to '$r ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Refusing to ver...FILE an 
+   d retry.:String) [], RuntimeException
+    + FullyQualifiedErrorId : Refusing to verify 0001-industrial-agent-wor 
+   kflow.patch: git resolves the index to '.git/index' instead of the che  
+  ckout's real index 'C:\maos\.clone-scratch-07\pre\.git\index'. Unset G   
+ IT_INDEX_FILE and retry.
+---AFTER---
+HEAD: f9525055c56a7f7771dd2fa029c147c2960a98a3
+status-lines: 93
+EXPECTED: exit 1 with relative-vs-absolute index refusal after 0001 (matches RUNLOG)

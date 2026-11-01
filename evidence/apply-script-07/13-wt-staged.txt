@@ -1,0 +1,301 @@
+﻿CASE: 13-wt-staged
+DATE: 2026-10-31T21:24:25.6560329+05:30
+SCRIPT-SHA256: 2B8674AA323C98ABDD9E5A54FDCBFF61332E715286CA690CC9BD530DA5C256A7
+PATCH-SHA256: 0001=40777EE7EA4EDBF534377BBE3012EAD6B2588B6B070681F1686003C699C03DD6 0002=EB68E07BCE21E9AC9D5245274BC5FCEA787C0A2AE6EC7810E756F933B764D0EC 0003=99FBF264719871D0B25F4075FDFABA8D881963B0AC5AF0749095D06613E4ABE4
+GIT: git version 2.53.0.windows.1
+TARGET: C:\maos\.worktrees\apply08-wtstaged
+SCRIPT: C:\maos\event-staging-2026-10-31\scripts\apply-event-patches.ps1
+---BEFORE---
+CMD: git -C <target> rev-parse HEAD
+f9525055c56a7f7771dd2fa029c147c2960a98a3
+CMD: git -C <target> rev-parse --git-path index
+C:/maos/.git/worktrees/apply08-wtstaged/index
+CMD: git -C <target> rev-parse --path-format=absolute --git-path index
+C:/maos/.git/worktrees/apply08-wtstaged/index
+CMD: git -C <target> status --porcelain
+M  .npmignore
+M  README.md
+M  demo/industrial/PRESENTATION_SCRIPT.md
+M  demo/industrial/RUNBOOK.md
+A  desktop/README.md
+A  desktop/main.cjs
+A  desktop/package-lock.json
+A  desktop/package.json
+A  desktop/preload.cjs
+A  docs/INSTALLATION.md
+A  docs/MAOS_INDUSTRIAL_OPERATOR_GUIDE.md
+M  package.json
+M  profiles/industrial/maos.config.json
+A  scripts/Install-MaosIndustrial.ps1
+A  scripts/New-MaosIndustrialInstallBundle.ps1
+A  scripts/Start-BasetenSyntheticPilot.ps1
+A  scripts/Windows-ProcessTree.ps1
+A  scripts/prepare-hooks.js
+M  src/api/middleware.ts
+M  src/api/openapi-spec.ts
+M  src/api/router.ts
+M  src/api/server.ts
+M  src/backends/anthropic-provider.ts
+M  src/backends/api-runtime.ts
+M  src/backends/factory.ts
+A  src/backends/meta-api-policy.ts
+M  src/backends/openai-provider.ts
+M  src/backends/provider.ts
+M  src/backends/runtime.ts
+M  src/cli/configure.ts
+M  src/cli/dashboard-template.ts
+M  src/cli/dashboard.ts
+M  src/cli/doctor.ts
+M  src/cli/index.ts
+M  src/cli/plan.ts
+M  src/cli/repl.ts
+M  src/core/agent-runner.ts
+M  src/core/checkpoint.ts
+M  src/core/credentials.ts
+M  src/core/event-store.ts
+M  src/core/idempotency-store.ts
+M  src/core/objective-store.ts
+M  src/core/orchestrator.ts
+M  src/core/queue.ts
+M  src/core/retry-queue.ts
+A  src/domain/industrial-analysis-agent.ts
+M  src/domain/office-artifact.ts
+M  src/domain/schemas.ts
+M  src/gui/src/App.tsx
+M  src/gui/src/api/adapter.ts
+M  src/gui/src/api/errors.ts
+M  src/gui/src/api/event-client.ts
+M  src/gui/src/api/rest-client.ts
+M  src/gui/src/components/ActivityBar.tsx
+M  src/gui/src/components/Header.tsx
+M  src/gui/src/components/NavigationSidebar.tsx
+M  src/gui/src/components/StatusBar.tsx
+M  src/gui/src/components/TelemetryReviewPanel.tsx
+M  src/gui/src/main.tsx
+A  src/gui/src/native.d.ts
+M  src/gui/src/views/ApprovalsView.tsx
+M  src/gui/src/views/CockpitView.tsx
+M  src/gui/src/views/DocumentsView.tsx
+A  src/industrial/analysis-agent-service.ts
+M  src/industrial/atomic-cleanup-coordinator.ts
+M  src/industrial/deterministic-reset.ts
+A  src/industrial/entrypoint.ts
+M  src/industrial/industrial-cli.ts
+A  src/industrial/industrial-repl.ts
+A  src/industrial/judged-run-lock.ts
+M  src/industrial/judged-run.ts
+M  src/industrial/lifecycle.ts
+M  src/industrial/rust-engine-bridge.ts
+M  src/industrial/service-startup.ts
+M  src/industrial/telemetry-analysis.ts
+M  src/integrations/tools.ts
+M  src/service/artifact-service.ts
+M  src/service/docx-generator-service.ts
+M  src/service/index.ts
+M  src/service/project-service/entrypoint.ts
+M  src/service/retention-service.ts
+M  src/service/sovereignty-bundle-service.ts
+M  src/service/task-service.ts
+M  src/service/workflow-planning-service.ts
+M  src/service/workflow-service.ts
+M  src/utils/paths.ts
+A  src/utils/project-git-context.ts
+A  tests/backends/baseten-api-provider-boundary.test.ts
+A  tests/backends/meta-api-provider-boundary.test.ts
+A  tests/backends/openai-provider-local-tool-call.test.ts
+A  tests/cli/doctor.test.ts
+A  tests/cli/meta-provider-entrypoints.test.ts
+A  tests/cli/project-git-context.test.ts
+A  tests/core/agent-runner-budget.test.ts
+M  tests/f2-08-lifecycle.test.ts
+M  tests/f3-01-services.test.ts
+M  tests/f3-03-rest-contract.test.ts
+M  tests/f3-05-artifact-store.test.ts
+M  tests/f3-07-verifier-idempotency.test.ts
+M  tests/gui/ui1-01-spa-shell.test.ts
+M  tests/gui/ui1-02-api-clients.test.ts
+M  tests/gui/ui1-04-launcher-handshake.test.ts
+M  tests/gui/ui1-10-evidence-retention.test.ts
+M  tests/gui/ui1-24-one-project-v1-1.test.ts
+A  tests/gui/ui1-25-truthful-readiness.test.ts
+A  tests/gui/ui1-27-native-launcher-bridge.test.ts
+A  tests/industrial/analysis-agent-auth-http.test.ts
+A  tests/industrial/analysis-agent-contract.test.ts
+A  tests/industrial/analysis-agent-service.test.ts
+A  tests/industrial/baseten-pilot-process-tree.test.ts
+M  tests/industrial/f10-02-dashboard-trigger.test.ts
+M  tests/industrial/f10-05-deterministic-reset.test.ts
+M  tests/industrial/f10-06-judged-run.test.ts
+M  tests/industrial/f7-03-workflow-planning.test.ts
+M  tests/industrial/f9-08-interruption-atomic-cleanup.test.ts
+M  tests/industrial/f9-09-disconnected-full-rehearsal.test.ts
+M  tests/industrial/gate-g9-sovereignty-gate.test.ts
+A  tests/industrial/industrial-repl.test.ts
+A  tests/industrial/judged-run-lock.test.ts
+A  tests/industrial/meta-model-api-contract.test.ts
+A  tests/industrial/package-runtime-assets.test.ts
+M  tests/industrial/telemetry-analysis.test.ts
+A  tests/release/analysis-agent-browser-rehearsal.cjs
+A  tests/release/desktop-agent-deliverable-rehearsal.cjs
+A  tests/release/desktop-browser-rehearsal.cjs
+A  tests/release/run-desktop-package-rehearsals.ps1
+CMD: git -C <target> diff --cached --quiet HEAD -- (exit code only)
+index-vs-head-exit:1
+CMD: powershell.exe -NoProfile -NonInteractive -File "C:\maos\event-staging-2026-10-31\scripts\apply-event-patches.ps1" -CorePath "C:\maos\.worktrees\apply08-wtstaged"
+EXIT: 1
+---STDOUT---
+
+---STDERR---
+The real index contains staged changes differing from HEAD. Unstage them 
+(or restore a clean base checkout) and retry; the overlay cannot be 
+classified while staged-only differences exist. Nothing was applied or 
+reverted.
+At C:\maos\event-staging-2026-10-31\scripts\apply-event-patches.ps1:110 
+char:29
++ ... it -ne 0) { throw 'The real index contains staged changes differing 
+f ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (The real index ...ed or r 
+   everted.:String) [], RuntimeException
+    + FullyQualifiedErrorId : The real index contains staged changes diffe 
+   ring from HEAD. Unstage them (or restore a clean base checkout) and re  
+  try; the overlay cannot be classified while staged-only differences ex   
+ ist. Nothing was applied or reverted.
+---AFTER---
+CMD: git -C <target> rev-parse HEAD
+f9525055c56a7f7771dd2fa029c147c2960a98a3
+CMD: git -C <target> rev-parse --git-path index
+C:/maos/.git/worktrees/apply08-wtstaged/index
+CMD: git -C <target> rev-parse --path-format=absolute --git-path index
+C:/maos/.git/worktrees/apply08-wtstaged/index
+CMD: git -C <target> status --porcelain
+M  .npmignore
+M  README.md
+M  demo/industrial/PRESENTATION_SCRIPT.md
+M  demo/industrial/RUNBOOK.md
+A  desktop/README.md
+A  desktop/main.cjs
+A  desktop/package-lock.json
+A  desktop/package.json
+A  desktop/preload.cjs
+A  docs/INSTALLATION.md
+A  docs/MAOS_INDUSTRIAL_OPERATOR_GUIDE.md
+M  package.json
+M  profiles/industrial/maos.config.json
+A  scripts/Install-MaosIndustrial.ps1
+A  scripts/New-MaosIndustrialInstallBundle.ps1
+A  scripts/Start-BasetenSyntheticPilot.ps1
+A  scripts/Windows-ProcessTree.ps1
+A  scripts/prepare-hooks.js
+M  src/api/middleware.ts
+M  src/api/openapi-spec.ts
+M  src/api/router.ts
+M  src/api/server.ts
+M  src/backends/anthropic-provider.ts
+M  src/backends/api-runtime.ts
+M  src/backends/factory.ts
+A  src/backends/meta-api-policy.ts
+M  src/backends/openai-provider.ts
+M  src/backends/provider.ts
+M  src/backends/runtime.ts
+M  src/cli/configure.ts
+M  src/cli/dashboard-template.ts
+M  src/cli/dashboard.ts
+M  src/cli/doctor.ts
+M  src/cli/index.ts
+M  src/cli/plan.ts
+M  src/cli/repl.ts
+M  src/core/agent-runner.ts
+M  src/core/checkpoint.ts
+M  src/core/credentials.ts
+M  src/core/event-store.ts
+M  src/core/idempotency-store.ts
+M  src/core/objective-store.ts
+M  src/core/orchestrator.ts
+M  src/core/queue.ts
+M  src/core/retry-queue.ts
+A  src/domain/industrial-analysis-agent.ts
+M  src/domain/office-artifact.ts
+M  src/domain/schemas.ts
+M  src/gui/src/App.tsx
+M  src/gui/src/api/adapter.ts
+M  src/gui/src/api/errors.ts
+M  src/gui/src/api/event-client.ts
+M  src/gui/src/api/rest-client.ts
+M  src/gui/src/components/ActivityBar.tsx
+M  src/gui/src/components/Header.tsx
+M  src/gui/src/components/NavigationSidebar.tsx
+M  src/gui/src/components/StatusBar.tsx
+M  src/gui/src/components/TelemetryReviewPanel.tsx
+M  src/gui/src/main.tsx
+A  src/gui/src/native.d.ts
+M  src/gui/src/views/ApprovalsView.tsx
+M  src/gui/src/views/CockpitView.tsx
+M  src/gui/src/views/DocumentsView.tsx
+A  src/industrial/analysis-agent-service.ts
+M  src/industrial/atomic-cleanup-coordinator.ts
+M  src/industrial/deterministic-reset.ts
+A  src/industrial/entrypoint.ts
+M  src/industrial/industrial-cli.ts
+A  src/industrial/industrial-repl.ts
+A  src/industrial/judged-run-lock.ts
+M  src/industrial/judged-run.ts
+M  src/industrial/lifecycle.ts
+M  src/industrial/rust-engine-bridge.ts
+M  src/industrial/service-startup.ts
+M  src/industrial/telemetry-analysis.ts
+M  src/integrations/tools.ts
+M  src/service/artifact-service.ts
+M  src/service/docx-generator-service.ts
+M  src/service/index.ts
+M  src/service/project-service/entrypoint.ts
+M  src/service/retention-service.ts
+M  src/service/sovereignty-bundle-service.ts
+M  src/service/task-service.ts
+M  src/service/workflow-planning-service.ts
+M  src/service/workflow-service.ts
+M  src/utils/paths.ts
+A  src/utils/project-git-context.ts
+A  tests/backends/baseten-api-provider-boundary.test.ts
+A  tests/backends/meta-api-provider-boundary.test.ts
+A  tests/backends/openai-provider-local-tool-call.test.ts
+A  tests/cli/doctor.test.ts
+A  tests/cli/meta-provider-entrypoints.test.ts
+A  tests/cli/project-git-context.test.ts
+A  tests/core/agent-runner-budget.test.ts
+M  tests/f2-08-lifecycle.test.ts
+M  tests/f3-01-services.test.ts
+M  tests/f3-03-rest-contract.test.ts
+M  tests/f3-05-artifact-store.test.ts
+M  tests/f3-07-verifier-idempotency.test.ts
+M  tests/gui/ui1-01-spa-shell.test.ts
+M  tests/gui/ui1-02-api-clients.test.ts
+M  tests/gui/ui1-04-launcher-handshake.test.ts
+M  tests/gui/ui1-10-evidence-retention.test.ts
+M  tests/gui/ui1-24-one-project-v1-1.test.ts
+A  tests/gui/ui1-25-truthful-readiness.test.ts
+A  tests/gui/ui1-27-native-launcher-bridge.test.ts
+A  tests/industrial/analysis-agent-auth-http.test.ts
+A  tests/industrial/analysis-agent-contract.test.ts
+A  tests/industrial/analysis-agent-service.test.ts
+A  tests/industrial/baseten-pilot-process-tree.test.ts
+M  tests/industrial/f10-02-dashboard-trigger.test.ts
+M  tests/industrial/f10-05-deterministic-reset.test.ts
+M  tests/industrial/f10-06-judged-run.test.ts
+M  tests/industrial/f7-03-workflow-planning.test.ts
+M  tests/industrial/f9-08-interruption-atomic-cleanup.test.ts
+M  tests/industrial/f9-09-disconnected-full-rehearsal.test.ts
+M  tests/industrial/gate-g9-sovereignty-gate.test.ts
+A  tests/industrial/industrial-repl.test.ts
+A  tests/industrial/judged-run-lock.test.ts
+A  tests/industrial/meta-model-api-contract.test.ts
+A  tests/industrial/package-runtime-assets.test.ts
+M  tests/industrial/telemetry-analysis.test.ts
+A  tests/release/analysis-agent-browser-rehearsal.cjs
+A  tests/release/desktop-agent-deliverable-rehearsal.cjs
+A  tests/release/desktop-browser-rehearsal.cjs
+A  tests/release/run-desktop-package-rehearsals.ps1
+CMD: git -C <target> diff --cached --quiet HEAD -- (exit code only)
+index-vs-head-exit:1
+EXPECTED: exit 1, contains "staged changes differing from HEAD", must not contain "already applied"
+OBSERVED: PASS
