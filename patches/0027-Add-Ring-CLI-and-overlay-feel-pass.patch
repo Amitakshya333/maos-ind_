@@ -1,0 +1,2335 @@
+From cd6b8886e447a1fc273776e9b80bd56db4fc1e27 Mon Sep 17 00:00:00 2001
+From: Amitakshya Sutar <amitakshyasutar333@gmail.com>
+Date: Mon, 2 Nov 2026 22:50:31 +0530
+Subject: [PATCH 27/33] Add Ring CLI and overlay feel pass
+
+---
+ HACKATHON_SUBMISSION.md                     |   8 +
+ demo/industrial/PRESENTATION_SCRIPT.md      |  26 +-
+ demo/industrial/RECORDING_READINESS.md      |  12 +
+ desktop/main.cjs                            |   9 +
+ desktop/preload.cjs                         |   3 +
+ desktop/ring-overlay-host.cjs               |  15 +
+ src/cli/index.ts                            |  39 +
+ src/gui/src/components/RingOverlay.tsx      |  77 +-
+ src/gui/src/components/RingStreamPanels.tsx | 105 ++-
+ src/gui/src/components/RingWorkspace.tsx    |   8 +-
+ src/gui/src/native.d.ts                     |   2 +
+ src/industrial/industrial-repl.ts           |   2 +-
+ src/industrial/ring-cli.ts                  | 884 ++++++++++++++++++++
+ tests/gui/ring-devb-surface.test.ts         | 222 ++++-
+ tests/gui/ring-workspace.test.ts            |  30 +
+ tests/industrial/ring-cli.test.ts           | 519 ++++++++++++
+ 16 files changed, 1940 insertions(+), 21 deletions(-)
+ create mode 100644 src/industrial/ring-cli.ts
+ create mode 100644 tests/industrial/ring-cli.test.ts
+
+diff --git a/HACKATHON_SUBMISSION.md b/HACKATHON_SUBMISSION.md
+index dbe38a6..1e689c1 100644
+--- a/HACKATHON_SUBMISSION.md
++++ b/HACKATHON_SUBMISSION.md
+@@ -157,6 +157,14 @@ deterministic verdict `CRITICAL` with overall RMS `2.637 mm/s`
+ | Demo video link | **Not recorded** | Add only after the actual rules/form specify the required hosting/visibility |
+ | Public repository link | `https://github.com/Amitakshya333/MAOS-industrial-` from package metadata | Verify access, submitted revision, and disclosure expectations before use |
+ 
++Demo spine (TASK DEV-C-FEEL-01): Linux CLI starts the thread (TO-RECORD;
++Linux distro/version TO-FILL — no VM result available for this pass) →
++Windows overlay continues the same thread (Expand handoff, same thread id) →
++refusal beat → audit verify. GUI/Electron claims are Windows-only; Electron
++is not claimed on Linux. A CLI-started thread appearing in the GUI sidebar
++is CUT (no Ring thread CLI command, no thread-list route) and is not
++presented. No video has been recorded.
++
+ The full Electron/browser gate used one Windows tarball containing four
+ synthetic fixtures, four Python sources, three GUI assets, five desktop assets,
+ and the Industrial profile; the Rust engine was separate. After updating the
+diff --git a/demo/industrial/PRESENTATION_SCRIPT.md b/demo/industrial/PRESENTATION_SCRIPT.md
+index 76c78c1..25d36be 100644
+--- a/demo/industrial/PRESENTATION_SCRIPT.md
++++ b/demo/industrial/PRESENTATION_SCRIPT.md
+@@ -40,6 +40,18 @@ screen — never replay a saved model response while showing it as live.
+ 
+ ## Timed arc
+ 
++> Spine (TASK DEV-C-FEEL-01): Linux CLI starts the thread → Windows overlay
++> continues the SAME thread → refusal beat → audit verify. Platform truth:
++> the CLI leg is TO-RECORD on Linux (distro/version TO-FILL — no VM result
++> was available for this pass); the GUI legs (full app + overlay) are
++> Windows; Electron is NOT claimed on Linux. The thread handoff is the
++> overlay→workspace Expand path on the same thread id
++> (`src/gui/src/components/RingOverlay.tsx`, `RING_EXPAND_KEY`); a
++> CLI-started Ring thread appearing in the GUI sidebar is CUT (no Ring
++> thread command exists in `src/cli/`, no thread-list route) and is NOT
++> shown on camera. One fresh temporary project per run; keep run and thread
++> IDs visible throughout.
++
+ ### 0:00–0:30 — The plant can't use ChatGPT (TO-RECORD)
+ 
+ **Show:** The plant context and why generic chat is not an option (sovereignty:
+@@ -51,12 +63,16 @@ stays in MAOS; the T-07 calculation is deterministic local code using
+ synthetic turbine data and demonstration thresholds. This is decision
+ support, not an operating decision."
+ 
+-### 0:30–1:00 — Ask Ring the turbine question (TO-RECORD)
++### 0:30–1:00 — Start the thread, continue it in the overlay (TO-RECORD)
+ 
+-**Action:** In the full app, ask Ring the T-07 turbine question (example: "Analyze
+-turbine vibration telemetry for T-07 and summarize the verdict, citing the
+-deterministic overall RMS."). Watch streamed fragments arrive as `model.delta`
+-events (`src/service/ring-agent-service.ts:890-908`).
++**Action:** Start the T-07 thread on the Linux CLI (distro/version TO-FILL),
++then continue the SAME thread in the Windows overlay: summon with
++**Ctrl+Shift+Space** (focus lands in the input), press Enter to send, and
++watch the first honest output land immediately ("Working on it — fetching
++the live plan…", then real polled events — never invented plan text). The
++CLI leg is TO-RECORD; if the CLI thread entry is unavailable on camera,
++start the thread in the full app instead and say so — do not present the
++GUI-started thread as CLI-started.
+ 
+ **Say:** "I'm asking Ring — wired to meta-models/muse-spark-open-1026 via
+ Baseten — the turbine question. Tokens stream live; the verdict and RMS come
+diff --git a/demo/industrial/RECORDING_READINESS.md b/demo/industrial/RECORDING_READINESS.md
+index 4a73754..39cd5a3 100644
+--- a/demo/industrial/RECORDING_READINESS.md
++++ b/demo/industrial/RECORDING_READINESS.md
+@@ -16,6 +16,18 @@ On-screen identity (identical everywhere):
+ `EVIDENCE-ONLY · no model configured`
+ (`tests/gui/ring-impl-01.test.ts:105`).
+ 
++## Spine and platform truth (TASK DEV-C-FEEL-01)
++
++- Spine: Linux CLI starts the thread → Windows overlay continues the same
++  thread → refusal beat → audit verify. The overlay continuation is the
++  Expand handoff on the same thread id (`RING_EXPAND_KEY`); it is covered
++  by GUI tests, not by a recording yet.
++- Linux CLI leg: TO-RECORD. Distro/version TO-FILL — no Linux VM result
++  was available for this pass, so no Linux claim is made here.
++- GUI legs (full app + overlay): Windows. Electron is NOT claimed on Linux.
++- CUT, not on camera: a CLI-started thread appearing in the GUI thread
++  sidebar (no Ring thread command in `src/cli/`, no thread-list route).
++
+ ## Verified evidence
+ 
+ - Hosted wiring: exact provider/endpoint/model triple plus
+diff --git a/desktop/main.cjs b/desktop/main.cjs
+index 95e2bad..0368abf 100644
+--- a/desktop/main.cjs
++++ b/desktop/main.cjs
+@@ -231,6 +231,15 @@ async function runElectron() {
+       }
+       ringOverlay.focusMainWindow(browserWindow);
+     });
++    // TASK DEV-C-FEEL-01 (feel 1: keyboard-first): Escape in the overlay
++    // hides the window through the same toggle path (hide, not close).
++    // Sender + origin checks mirror maos:expand-ring exactly.
++    ipcMain.handle('maos:hide-ring-overlay', (event) => {
++      if (!browserWindow || event.sender !== overlayWebContents()) {
++        throw new Error('UNTRUSTED_RENDERER: hide is restricted to the active Ring overlay.');
++      }
++      ringOverlay.hideRingOverlay();
++    });
+     // TASK RING-DEV-B-01 (Day 1 fix): the overlay is a SECOND window with
+     // its OWN main frame. The old check compared every sender against the
+     // main window's mainFrame, so the overlay could never complete the
+diff --git a/desktop/preload.cjs b/desktop/preload.cjs
+index 2d312ee..09418df 100644
+--- a/desktop/preload.cjs
++++ b/desktop/preload.cjs
+@@ -7,6 +7,9 @@ contextBridge.exposeInMainWorld('maosNative', Object.freeze({
+   // TASK RING-DEV-B-01: overlay asks the main window to focus the full Ring
+   // view on the same thread. Private IPC only; no token, no URL, no shell.
+   expandRing: () => ipcRenderer.invoke('maos:expand-ring'),
++  // TASK DEV-C-FEEL-01 (feel 1: keyboard-first): Escape hides the overlay
++  // through the same toggle path (no new close semantics).
++  hideRingOverlay: () => ipcRenderer.invoke('maos:hide-ring-overlay'),
+   // TASK RING-DEV-B-01 (Day 2c): explicit screenshot trigger. The main
+   // process captures ONLY on this call (user button press); there is no
+   // background capture path in the main process.
+diff --git a/desktop/ring-overlay-host.cjs b/desktop/ring-overlay-host.cjs
+index d1b35ff..2d28a3c 100644
+--- a/desktop/ring-overlay-host.cjs
++++ b/desktop/ring-overlay-host.cjs
+@@ -117,6 +117,20 @@ function toggleOverlay(ui, options) {
+   return 'shown';
+ }
+ 
++/**
++ * TASK DEV-C-FEEL-01 (feel 1: keyboard-first): Escape in the overlay
++ * hides the window through the SAME toggle path as the hotkey (hide, not
++ * close/destroy). Pure helper — the Electron IPC binding lives in
++ * desktop/main.cjs (maos:hide-ring-overlay).
++ */
++function hideRingOverlay() {
++  const win = overlayState.window;
++  if (!win || (typeof win.isDestroyed === 'function' && win.isDestroyed())) return false;
++  if (typeof win.isVisible === 'function' && !win.isVisible()) return false;
++  if (typeof win.hide === 'function') win.hide();
++  return true;
++}
++
+ function focusMainWindow(mainWindow) {
+   if (!mainWindow || (typeof mainWindow.isDestroyed === 'function' && mainWindow.isDestroyed())) return false;
+   if (typeof mainWindow.show === 'function' && typeof mainWindow.isVisible === 'function' && !mainWindow.isVisible()) {
+@@ -241,6 +255,7 @@ module.exports = {
+   ringHotkey,
+   createOverlayWindow,
+   toggleOverlay,
++  hideRingOverlay,
+   focusMainWindow,
+   registerRingHotkey,
+   createRingTray,
+diff --git a/src/cli/index.ts b/src/cli/index.ts
+index 48214ff..a8e1315 100644
+--- a/src/cli/index.ts
++++ b/src/cli/index.ts
+@@ -42,6 +42,7 @@ import {
+   runIndustrialOpen,
+ } from '../industrial/industrial-cli';
+ import { runIndustrialRepl } from '../industrial/industrial-repl';
++import { RING_CLI_EXIT, runRingHeadless, runRingRepl } from '../industrial/ring-cli';
+ import { createServiceContainer } from '../service';
+ 
+ const VERSION = '0.3.0';
+@@ -543,6 +544,44 @@ industrial
+   .description('Start the bounded local operator REPL')
+   .action(() => runIndustrialRepl());
+ 
++// ─── maos industrial ring ─────────────────────────────────────
++// Ring agent CLI: interactive REPL (default) or headless run with -p.
++// Calls RingAgentService in-process — no new agent engine — sharing the
++// same .maos/ring-runs store, threads, skills, approvals, and streaming
++// events as the GUI. Headless mode never auto-approves: consequential
++// steps end as awaiting_approval (exit 3) with a resume hint. There is
++// deliberately NO --yes flag for consequential tools.
++industrial
++  .command('ring')
++  .description('Ring agent: interactive REPL (default) or headless run with -p')
++  .option('-p, --prompt <instruction>', 'Headless instruction; omit for interactive REPL')
++  .option('--thread <id>', 'Run inside an existing thread (headless only)')
++  .option('--yes-to <scope>', "Only 'none' is accepted; there is no --yes for consequential tools")
++  .option('--json', 'Headless: print wire events as JSONL')
++  .action(async (opts) => {
++    try {
++      if (opts.prompt) {
++        const result = await runRingHeadless({
++          projectRoot: process.cwd(),
++          instruction: opts.prompt,
++          thread: opts.thread,
++          yesTo: opts.yesTo,
++          json: opts.json,
++        });
++        process.exit(result.exitCode);
++      }
++      if (opts.json || opts.thread || opts.yesTo) {
++        console.error(chalk.red('Error: --json/--thread/--yes-to require -p <instruction>.'));
++        process.exit(RING_CLI_EXIT.FAILED);
++      }
++      await runRingRepl({ projectRoot: process.cwd() });
++    } catch (err) {
++      const message = err instanceof Error ? err.message : String(err);
++      console.error(chalk.red(`Error: ${message}`));
++      process.exit(RING_CLI_EXIT.FAILED);
++    }
++  });
++
+ const bundleCmd = industrial
+   .command('bundle')
+   .description('Manage offline bundle packaging and verification');
+diff --git a/src/gui/src/components/RingOverlay.tsx b/src/gui/src/components/RingOverlay.tsx
+index d6bdb39..de2ca82 100644
+--- a/src/gui/src/components/RingOverlay.tsx
++++ b/src/gui/src/components/RingOverlay.tsx
+@@ -45,6 +45,7 @@ import {
+   allMemories,
+   latestPlan,
+   RingArtifactCard,
++  RingBottomLine,
+   RingLiveText,
+   RingMemoryNote,
+   RingPlanChecklist,
+@@ -90,6 +91,8 @@ export const RingOverlay: React.FC<{ runClient?: RingRunClient; pollIntervalMs?:
+   if (runClient) clientRef.current = runClient;
+ 
+   const [instruction, setInstruction] = useState('');
++  const [lastPrompt, setLastPrompt] = useState('');
++  const inputRef = useRef<HTMLInputElement>(null);
+   const [runId, setRunId] = useState<string | null>(null);
+   // TASK RING-DEV-B-01 (Day 1a): overlay shares thread ids with the full
+   // view. When the run client carries a thread client (same REST routes as
+@@ -101,6 +104,11 @@ export const RingOverlay: React.FC<{ runClient?: RingRunClient; pollIntervalMs?:
+   const [starting, setStarting] = useState(false);
+   const [startError, setStartError] = useState<string | null>(null);
+   const [approvalBusyId, setApprovalBusyId] = useState<string | null>(null);
++  // TASK DEV-C-FEEL-01 (feel 2: first output <1s). sendPending flips true the
++  // same tick as send: the transcript shows an honest pending line
++  // immediately (no invented plan/tools — just the submitted prompt echoed),
++  // then real polled events replace it. starting already gates the input.
++  const [sendPending, setSendPending] = useState(false);
+   const [approvalError, setApprovalError] = useState<string | null>(null);
+   const endRef = useRef<HTMLDivElement>(null);
+ 
+@@ -120,6 +128,21 @@ export const RingOverlay: React.FC<{ runClient?: RingRunClient; pollIntervalMs?:
+   const [overlayAttachments, setOverlayAttachments] = useState<RingAttachment[]>([]);
+   const [overlayAttachError, setOverlayAttachError] = useState<string | null>(null);
+ 
++  // TASK DEV-C-FEEL-01 (feel 1: keyboard-first). The overlay is summoned
++  // for quick asks: focus lands in the input on mount and on every show
++  // (the global hotkey re-shows the window via overlayState.window.show(),
++  // which fires a window focus event — refocus there too). Escape hides the
++  // overlay through the same toggle path (no new close semantics); ArrowUp
++  // in an empty input recalls the last submitted prompt.
++  useEffect(() => {
++    inputRef.current?.focus();
++    const refocus = () => {
++      if (document.hasFocus()) inputRef.current?.focus();
++    };
++    window.addEventListener('focus', refocus);
++    return () => window.removeEventListener('focus', refocus);
++  }, []);
++
+   // TASK OVERLAY-FIX-01 (defect 1: overlay was opaque). The native side sets
+   // transparent:true + zero-alpha backgroundColor, but that alone is NOT
+   // enough: the default theme paints html/body with an opaque background
+@@ -182,6 +205,7 @@ export const RingOverlay: React.FC<{ runClient?: RingRunClient; pollIntervalMs?:
+     const suffix = attachmentInstructionSuffix(overlayAttachments);
+     const text = suffix ? rawText + suffix : rawText;
+     setStarting(true);
++    setSendPending(true);
+     setStartError(null);
+     try {
+       let nextRunId: string;
+@@ -205,6 +229,7 @@ export const RingOverlay: React.FC<{ runClient?: RingRunClient; pollIntervalMs?:
+         nextRunId = (await clientRef.current.startRun({ instruction: text })).runId;
+       }
+       setRunId(nextRunId);
++      setLastPrompt(rawText);
+       setInstruction('');
+       try {
+         setState(await clientRef.current.getRun(nextRunId));
+@@ -215,6 +240,7 @@ export const RingOverlay: React.FC<{ runClient?: RingRunClient; pollIntervalMs?:
+       setStartError((err as Error).message || 'Ring run service unavailable.');
+     } finally {
+       setStarting(false);
++      setSendPending(false);
+     }
+   };
+ 
+@@ -487,16 +513,49 @@ export const RingOverlay: React.FC<{ runClient?: RingRunClient; pollIntervalMs?:
+         )}
+       </div>
+ 
++      {/* TASK DEV-C-FEEL-01 (feel 4): distinct needs-you state. The ring
++          stops pulsing (see RingMark) and this amber banner names the
++          pending approval action instead — no spinning while waiting on
++          the human. */}
++      {visual === 'needs-you' && (
++        <div
++          data-testid="ring-overlay-needs-you"
++          role="status"
++          style={{
++            fontSize: '12px',
++            fontWeight: 700,
++            color: 'var(--status-amber, #eab308)',
++            border: '1px solid var(--status-amber, #eab308)',
++            borderRadius: '6px',
++            padding: '6px 10px',
++            backgroundColor: 'rgba(234, 179, 8, 0.08)',
++          }}
++        >
++          Needs you — an approval below is waiting for your decision.
++        </div>
++      )}
++
+       <div
+         data-testid="ring-overlay-transcript"
+         style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}
+       >
+-        {!runId && (
++        {(sendPending || starting) && events.length === 0 && (
++          <div data-testid="ring-overlay-thinking" role="status" style={{ fontSize: '12px', color: 'var(--text-secondary, #cccccc)' }}>
++            Working on it — fetching the live plan…
++          </div>
++        )}
++        {!runId && !sendPending && (
+           <div data-testid="ring-overlay-empty" style={{ color: 'var(--text-dim, #888888)', fontSize: '12px' }}>
+             Ask Ring anything — the plan, tools, approvals, and files stream here.
+             {!threadsAvailable && ' Runs are unscoped: the thread service is unreachable.'}
+           </div>
+         )}
++        {/* TASK DEV-C-FEEL-01 (feel 3): bottom-line-first. The one-line
++            verdict (numbers with units) renders before evidence and the
++            collapsed tool details below. Verbatim from polled events. */}
++        {state && (events.length > 0 || state.finalAnswer) && (
++          <RingBottomLine events={events} finalAnswer={state.finalAnswer} mode={state.mode} />
++        )}
+         {events.map(renderEvent)}
+         {approvedArtifactsPending(events, isLive) && (
+           <div data-testid="ring-overlay-generating" role="status" style={{ fontSize: '12px', color: 'var(--text-secondary, #cccccc)' }}>
+@@ -555,8 +614,24 @@ export const RingOverlay: React.FC<{ runClient?: RingRunClient; pollIntervalMs?:
+         <input
+           aria-label="Ask Ring"
+           data-testid="ring-overlay-input"
++          ref={inputRef}
+           value={instruction}
+           onChange={(event) => setInstruction(event.target.value)}
++          onKeyDown={(event) => {
++            if (event.key === 'Escape') {
++              event.preventDefault();
++              const bridge = (window as unknown as { maosNative?: { hideRingOverlay?: () => void } }).maosNative;
++              if (bridge?.hideRingOverlay) {
++                try { bridge.hideRingOverlay(); } catch { /* hiding is best-effort */ }
++              }
++              (event.target as HTMLInputElement).blur();
++              return;
++            }
++            if (event.key === 'ArrowUp' && instruction === '' && lastPrompt) {
++              event.preventDefault();
++              setInstruction(lastPrompt);
++            }
++          }}
+           disabled={starting}
+           placeholder="Ask Ring…"
+           style={{
+diff --git a/src/gui/src/components/RingStreamPanels.tsx b/src/gui/src/components/RingStreamPanels.tsx
+index b0e34ee..774189b 100644
+--- a/src/gui/src/components/RingStreamPanels.tsx
++++ b/src/gui/src/components/RingStreamPanels.tsx
+@@ -27,12 +27,20 @@ import type {
+   RingRunEvent,
+ } from '../api/ring-run-types';
+ 
+-/** Ring run lifecycle states for the animated ring (Day 1b). */
++/**
++ * TASK DEV-C-FEEL-01 (feel 4): ring animation states match the real run
++ * state. `needs-you` is a distinct stop state for an UNRESOLVED
++ * approval — the ring stops pulsing (no spinning while waiting on the
++ * human) and the amber "Needs you" label/banner takes over instead. The
++ * `waiting-for-approval` union member is preserved verbatim for the
++ * frozen contract and existing callers/tests.
++ */
+ export type RingVisualState =
+   | 'idle'
+   | 'thinking'
+   | 'using-tool'
+   | 'waiting-for-approval'
++  | 'needs-you'
+   | 'done'
+   | 'error';
+ 
+@@ -47,9 +55,19 @@ export function ringVisualStateForRun(
+   if (!status) return 'idle';
+   if (status === 'failed' || status === 'cancelled') return 'error';
+   if (status === 'completed') return 'done';
+-  if (status === 'awaiting_approval') return 'waiting-for-approval';
+-  const pendingApproval = events.some((e) => e.type === 'approval.pending');
+-  if (pendingApproval) return 'waiting-for-approval';
++  if (status === 'awaiting_approval') return 'needs-you';
++  // TASK DEV-C-FEEL-01 (feel 4): an unresolved approval.pending on a
++  // still-running run is the needs-you state — distinct from in-flight
++  // thinking/using-tool, which keep pulsing.
++  const pendingIds = new Set(
++    events.filter((e) => e.type === 'approval.pending' && e.approvalId).map((e) => e.approvalId as string),
++  );
++  const resolvedIds = new Set(
++    events.filter((e) => e.type === 'approval.resolved' && e.approvalId).map((e) => e.approvalId as string),
++  );
++  for (const id of pendingIds) {
++    if (!resolvedIds.has(id)) return 'needs-you';
++  }
+   const toolCalls = events.filter((e) => e.type === 'tool.call').length;
+   const pairedResults = events.filter((e) => e.type === 'tool.result').length;
+   if (toolCalls > 0 && pairedResults < toolCalls) return 'using-tool';
+@@ -62,6 +80,7 @@ const RING_STATE_COLOR: Record<RingVisualState, string> = {
+   thinking: 'var(--accent, #3b82f6)',
+   'using-tool': 'var(--status-green, #4ade80)',
+   'waiting-for-approval': 'var(--status-amber, #eab308)',
++  'needs-you': 'var(--status-amber, #eab308)',
+   done: 'var(--status-green, #4ade80)',
+   error: 'var(--status-red, #ef4444)',
+ };
+@@ -71,21 +90,23 @@ const RING_STATE_LABEL: Record<RingVisualState, string> = {
+   thinking: 'Thinking',
+   'using-tool': 'Using tool',
+   'waiting-for-approval': 'Waiting for approval',
++  'needs-you': 'Needs you',
+   done: 'Done',
+   error: 'Needs attention',
+ };
+ 
+ /**
+  * Animated Ring mark. SVG pulse animation (no JS timers, no fake typing):
+- * the animation runs only while `state` is thinking/using-tool/
+- * waiting-for-approval; all other states render a static ring.
++ * the animation runs only while `state` is thinking/using-tool. The
++ * needs-you and waiting-for-approval states render a STATIC amber ring —
++ * no spinning while waiting on the human (TASK DEV-C-FEEL-01 feel 4); the
++ * distinct "Needs you" label/banner carries the call to act instead.
+  */
+ export const RingMark: React.FC<{ state: RingVisualState; size?: number }> = ({
+   state,
+   size = 44,
+ }) => {
+-  const animated =
+-    state === 'thinking' || state === 'using-tool' || state === 'waiting-for-approval';
++  const animated = state === 'thinking' || state === 'using-tool';
+   const color = RING_STATE_COLOR[state];
+   return (
+     <span
+@@ -294,6 +315,74 @@ export const RingArtifactCard: React.FC<{
+   );
+ };
+ 
++/**
++ * TASK DEV-C-FEEL-01 (feel 3): bottom-line-first answer layout. The first
++ * thing a run shows is one verdict line (preferred: verdict + RMS with
++ * units from the latest paired tool.result; fallback: the first model
++ * text / final answer truncated to one line), then evidence and sources
++ * render below in the normal transcript. Everything is verbatim from
++ * polled events — no invented numbers, units always attached.
++ */
++export function bottomLineForEvents(
++  events: readonly RingRunEvent[],
++  finalAnswer?: string,
++): { line: string; verdict?: string; overallRms?: number; sources: string[] } | null {
++  let verdict: string | undefined;
++  let overallRms: number | undefined;
++  let sources: string[] = [];
++  for (const event of events) {
++    if (event.type === 'tool.result') {
++      if (typeof event.verdict === 'string' && event.verdict) verdict = event.verdict;
++      if (typeof event.overallRms === 'number') overallRms = event.overallRms;
++      if (Array.isArray(event.sources) && event.sources.length > 0) sources = [...event.sources];
++    }
++  }
++  if (verdict !== undefined || overallRms !== undefined) {
++    const parts: string[] = [];
++    if (verdict) parts.push(verdict);
++    if (overallRms !== undefined) parts.push('RMS ' + overallRms + ' mm/s');
++    return { line: parts.join(' · ') || 'Result', verdict, overallRms, sources };
++  }
++  for (const event of events) {
++    if ((event.type === 'model.turn' || event.type === 'model.delta') && typeof (event.text ?? event.delta) === 'string') {
++      const raw = String(event.text ?? event.delta).trim().split('\n')[0].trim();
++      if (raw) return { line: raw, sources: [] };
++    }
++  }
++  if (typeof finalAnswer === 'string' && finalAnswer.trim()) {
++    return { line: finalAnswer.trim().split('\n')[0].trim(), sources: [] };
++  }
++  return null;
++}
++
++export const RingBottomLine: React.FC<{
++  events: readonly RingRunEvent[];
++  finalAnswer?: string;
++  mode?: string;
++}> = ({ events, finalAnswer, mode }) => {
++  const bottom = bottomLineForEvents(events, finalAnswer);
++  if (!bottom) return null;
++  return (
++    <div data-testid="ring-bottom-line" style={{ alignSelf: 'flex-start', maxWidth: '90%' }}>
++      <div style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-secondary, #cccccc)', marginBottom: '4px' }}>
++        BOTTOM LINE{mode === 'evidence-only' ? ' · EVIDENCE-ONLY' : ''}
++      </div>
++      <div style={{ fontSize: '14px', fontWeight: 700, lineHeight: '1.4' }}>{bottom.line}</div>
++      {bottom.sources.length > 0 && (
++        <div data-testid="ring-bottom-line-sources" style={{ fontSize: '11px', color: 'var(--text-dim, #888888)', marginTop: '4px' }}>
++          Evidence:{' '}
++          {bottom.sources.map((source, index) => (
++            <span key={index}>
++              {index > 0 ? ', ' : ''}
++              <code>{source}</code>
++            </span>
++          ))}
++        </div>
++      )}
++    </div>
++  );
++};
++
+ /** Stored-memory note, rendered verbatim. */
+ export const RingMemoryNote: React.FC<{ memory: RingMemoryRecord }> = ({ memory }) => (
+   <div
+diff --git a/src/gui/src/components/RingWorkspace.tsx b/src/gui/src/components/RingWorkspace.tsx
+index 2bd5a7a..2db3cf1 100644
+--- a/src/gui/src/components/RingWorkspace.tsx
++++ b/src/gui/src/components/RingWorkspace.tsx
+@@ -31,7 +31,7 @@ import type {
+   RingRunState,
+ } from '../api/ring-run-types';
+ import { CompletionRefusalDemo } from './CompletionRefusalDemo';
+-import { RingArtifactCard, RingLiveText, RingMemoryNote, RingPlanChecklist } from './RingStreamPanels';
++import { RingArtifactCard, RingBottomLine, RingLiveText, RingMemoryNote, RingPlanChecklist } from './RingStreamPanels';
+ import { DEFAULT_RING_ROLE, RING_EXPAND_KEY, RingRolePicker, RingThreadSidebar, toThreadSummary, type RingThreadClient } from './RingThreads';
+ import { attachmentInstructionSuffix, RingAttachmentBar, type RingAttachment, type RingAttachmentClient } from './RingAttachments';
+ import { TelemetryReviewCoordinator } from './telemetryReviewCoordinator';
+@@ -303,7 +303,7 @@ export const RingToolChip: React.FC<{ call: RingRunEvent; result?: RingRunEvent
+           {!result && <div>Running…</div>}
+           {result?.resultSummary && <div>{result.resultSummary}</div>}
+           {result?.verdict && <div>Verdict: {result.verdict}</div>}
+-          {typeof result?.overallRms === 'number' && <div>RMS: {result.overallRms}</div>}
++          {typeof result?.overallRms === 'number' && <div data-testid="ring-tool-rms">RMS: {result.overallRms} mm/s</div>}
+           {result?.sources && result.sources.length > 0 && (
+             <div>
+               Sources:{' '}
+@@ -1305,6 +1305,10 @@ export const RingWorkspace: React.FC<RingWorkspaceProps> = ({
+             {runs.map((run) => (
+               <React.Fragment key={run.runId}>
+                 <RingUserMessage text={run.instruction} agentId={run.agentId} />
++                {/* TASK DEV-C-FEEL-01 (feel 3): bottom-line-first. The one-line
++                    verdict (numbers with units) renders before the evidence
++                    and collapsed tool details below. Verbatim from polled events. */}
++                {run.state && <RingBottomLine events={run.state.events} finalAnswer={run.state.finalAnswer} mode={run.state.mode} />}
+                 {(run.state?.events ?? []).map((entry, index) => renderTranscriptEvent(run, entry, index))}
+                 {run.state?.finalAnswer && <RingFinalAnswer answer={run.state.finalAnswer} mode={run.state.mode} />}
+                 {run.state?.status === 'failed' && !failureEvent && (
+diff --git a/src/gui/src/native.d.ts b/src/gui/src/native.d.ts
+index eb6ab33..c2dc7d5 100644
+--- a/src/gui/src/native.d.ts
++++ b/src/gui/src/native.d.ts
+@@ -6,6 +6,8 @@ declare global {
+       initialize(): Promise<LauncherSessionBootstrap>;
+       /** TASK RING-DEV-B-01: overlay asks the main window to focus the full Ring view on the same thread. Absent outside Electron. */
+       expandRing?(): void;
++      /** TASK DEV-C-FEEL-01: Escape in the overlay hides it via the toggle path. Absent outside Electron. */
++      hideRingOverlay?(): void;
+       /**
+        * TASK RING-DEV-B-01 (Day 2c): explicit screenshot trigger. Resolves
+        * with PNG base64 held in memory (nothing written, nothing sent) or a
+diff --git a/src/industrial/industrial-repl.ts b/src/industrial/industrial-repl.ts
+index a37861f..2a6af43 100644
+--- a/src/industrial/industrial-repl.ts
++++ b/src/industrial/industrial-repl.ts
+@@ -21,7 +21,7 @@ function write(output: Writable, value: string): void {
+   output.write(`${value}\n`);
+ }
+ 
+-function safeTerminalText(value: unknown): string {
++export function safeTerminalText(value: unknown): string {
+   return String(value).replace(/[\u0000-\u001f\u007f]/g, ' ');
+ }
+ 
+diff --git a/src/industrial/ring-cli.ts b/src/industrial/ring-cli.ts
+new file mode 100644
+index 0000000..dc172a7
+--- /dev/null
++++ b/src/industrial/ring-cli.ts
+@@ -0,0 +1,884 @@
++/**
++ * TASK DEV-A-CLI-01: Ring CLI core (REPL + headless).
++ *
++ * New subcommand on bin maos-industrial: `maos-industrial ring`.
++ * Does NOT add a new agent engine: calls RingAgentService in-process
++ * (threads via RingThreadService, skills via parse/render + skillName
++ * context, approvals via resolveApproval, streaming via onStreamEvent),
++ * sharing the same `.maos/ring-runs` store as the GUI. Frozen contracts
++ * apply (ring-contract.ts, tool registry, event union, thread shapes).
++ *
++ * Text sanitising: model output never injects terminal control sequences;
++ * every rendered value passes through safeTerminalText (reused from
++ * industrial-repl.ts).
++ */
++
++import * as fs from 'node:fs';
++import * as path from 'node:path';
++import * as readline from 'node:readline';
++import type { Readable, Writable } from 'node:stream';
++import chalk from 'chalk';
++import { BASETEN_API_KEY_ENV } from '../backends/meta-api-policy';
++import {
++  isRingRole,
++  isRingThreadId,
++  DEFAULT_RING_ROLE,
++} from '../service/ring-contract';
++import type { RingRole } from '../service/ring-contract';
++import type {
++  RingAgentRunSnapshot,
++  RingAgentWireEvent,
++} from '../service/ring-agent-service';
++import { RingAgentService } from '../service/ring-agent-service';
++import { RingThreadService } from '../service/ring-thread-service';
++import {
++  listRingSkills,
++  parseRingSkillCommand,
++} from '../service/ring-skills';
++import type { RingSkill } from '../service/ring-skills';
++import { getRingRolePersona } from '../service/ring-roles';
++import { createServiceContainer } from '../service';
++import type { ServiceContainer } from '../service';
++import { safeTerminalText } from './industrial-repl';
++import type { AuditService } from '../service/audit-service';
++
++export { safeTerminalText };
++
++/** Headless exit codes (frozen by task spec). */
++export const RING_CLI_EXIT = {
++  COMPLETED: 0,
++  FAILED: 1,
++  REFUSED_OR_CANCELLED: 2,
++  AWAITING_APPROVAL: 3,
++} as const;
++
++export type RingCliExitCode =
++  (typeof RING_CLI_EXIT)[keyof typeof RING_CLI_EXIT];
++
++export interface RingCliAudit {
++  verifyChain: AuditService['verifyChain'];
++  recordAuditEvent: AuditService['recordAuditEvent'];
++}
++
++export interface RingCliServices {
++  ringAgent: RingAgentService;
++  ringThread: RingThreadService;
++  audit: RingCliAudit;
++}
++
++export interface RingCliServiceOverrides {
++  ringAgent?: RingAgentService;
++  ringThread?: RingThreadService;
++  audit?: RingCliAudit;
++  container?: ServiceContainer;
++}
++
++function resolveServices(
++  projectRoot: string,
++  injected?: RingCliServiceOverrides,
++): RingCliServices {
++  const container =
++    injected?.container ?? createServiceContainer(projectRoot);
++  return {
++    ringAgent: injected?.ringAgent ?? container.ringAgent,
++    ringThread: injected?.ringThread ?? container.ringThread,
++    audit: injected?.audit ?? container.audit,
++  };
++}
++
++export type RingMode = 'hosted' | 'evidence-only';
++
++/** Badge-grade mode detection (mirrors the service arming rule, read-only). */
++export function detectRingMode(projectRoot: string): RingMode {
++  try {
++    const raw = fs.readFileSync(
++      path.resolve(projectRoot, '.maos', 'maos.config.json'),
++      'utf-8',
++    );
++    const cfg = JSON.parse(raw) as {
++      providers?: { baseten?: { basetenApiEnabled?: boolean } };
++    };
++    const enabled = cfg?.providers?.baseten?.basetenApiEnabled === true;
++    const key = process.env[BASETEN_API_KEY_ENV];
++    if (enabled && key && key.trim()) return 'hosted';
++  } catch {
++    /* unreadable config: fail closed to evidence-only */
++  }
++  return 'evidence-only';
++}
++
++/**
++ * Refusal heuristic: the service completes refusals as `completed` carrying
++ * the frozen refusal copy (no refusal marker on the transcript), so the CLI
++ * matches that copy to map safety refusals to exit code 2.
++ */
++export function isRingRefusalAnswer(finalAnswer: string): boolean {
++  const text = finalAnswer || '';
++  return (
++    text.includes('I cannot approve equipment restart') ||
++    text.includes('I cannot certify safety') ||
++    text.includes("I can't approve a restart or operation")
++  );
++}
++
++export function ringExitForSnapshot(
++  snap: RingAgentRunSnapshot,
++): RingCliExitCode {
++  if (snap.status === 'completed') {
++    return snap.finalAnswer && isRingRefusalAnswer(snap.finalAnswer)
++      ? RING_CLI_EXIT.REFUSED_OR_CANCELLED
++      : RING_CLI_EXIT.COMPLETED;
++  }
++  if (snap.status === 'awaiting_approval') return RING_CLI_EXIT.AWAITING_APPROVAL;
++  if (snap.status === 'cancelled') return RING_CLI_EXIT.REFUSED_OR_CANCELLED;
++  return RING_CLI_EXIT.FAILED;
++}
++
++function resumeHint(runId: string): string {
++  return `maos-industrial ring --resume ${runId}`;
++}
++
++// ─── Headless ───────────────────────────────────────────────────
++
++export interface RingHeadlessOptions {
++  projectRoot?: string;
++  /** Instruction to run. Omit when resuming an existing run. */
++  instruction?: string;
++  /** Attach to an existing run (status poll; never approves). */
++  resumeRunId?: string;
++  thread?: string;
++  json?: boolean;
++  /** Only accepted value: 'none'. There is no --yes for consequential tools. */
++  yesTo?: string;
++  services?: RingCliServiceOverrides;
++  output?: Writable;
++}
++
++interface PrintedKeys {
++  seen: Set<string>;
++}
++
++function eventKey(event: RingAgentWireEvent): string {
++  return `${event.type} ${event.ts} ${event.toolCallId ?? ''} ${event.approvalId ?? ''}`;
++}
++
++function printWireJson(
++  output: Writable,
++  event: RingAgentWireEvent,
++  printed: PrintedKeys,
++): void {
++  const key = eventKey(event);
++  if (printed.seen.has(key)) return;
++  printed.seen.add(key);
++  output.write(`${JSON.stringify(event)}\n`);
++}
++
++function summarizeArgs(args: unknown): string {
++  if (args === undefined || args === null) return '';
++  if (typeof args === 'string') return args ? ` ${args}` : '';
++  if (typeof args !== 'object') return ` ${String(args)}`;
++  const parts: string[] = [];
++  for (const [k, v] of Object.entries(args as Record<string, unknown>)) {
++    if (v === undefined || v === null) continue;
++    parts.push(`${k}=${typeof v === 'object' ? JSON.stringify(v) : String(v)}`);
++  }
++  return parts.length ? ` ${parts.join(' ')}` : '';
++}
++
++/** Human-readable one-line render of a wire event (sanitised). */
++function renderWireHuman(event: RingAgentWireEvent): string | undefined {
++  switch (event.type) {
++    case 'model.delta':
++      return typeof event.delta === 'string' && event.delta
++        ? safeTerminalText(event.delta)
++        : undefined;
++    case 'model.turn':
++      return typeof event.text === 'string' && event.text
++        ? `(whole text \u2014 provider does not stream) ${safeTerminalText(event.text)}`
++        : undefined;
++    case 'plan.updated': {
++      const plan = Array.isArray(event.plan) ? event.plan : [];
++      const lines = plan.map((p) => {
++        const mark = p.status === 'done' ? '[x]' : '[ ]';
++        return `${mark} ${p.step}`;
++      });
++      return lines.length ? safeTerminalText(lines.join('\n')) : undefined;
++    }
++    case 'tool.call':
++      return `▸ ${safeTerminalText(event.tool ?? 'tool')}${safeTerminalText(summarizeArgs(event.argsSummary))} …`;
++    case 'tool.result': {
++      const verdict =
++        typeof event.verdict === 'string' ? ` · ${event.verdict}` : '';
++      const rms =
++        typeof event.overallRms === 'number' && Number.isFinite(event.overallRms)
++          ? ` · RMS ${event.overallRms.toFixed(3)}`
++          : '';
++      const summary =
++        typeof event.resultSummary === 'string' && event.resultSummary
++          ? ` · ${event.resultSummary.slice(0, 200)}`
++          : '';
++      return `✓ ${safeTerminalText(event.tool ?? 'tool')}${safeTerminalText(verdict)}${safeTerminalText(rms)}${safeTerminalText(summary)}`;
++    }
++    case 'artifact.created':
++      return event.artifact && typeof event.artifact.path === 'string'
++        ? `artifact: ${safeTerminalText(event.artifact.path)}`
++        : undefined;
++    case 'memory.saved':
++      return event.memory && typeof event.memory.summary === 'string'
++        ? `memory saved: ${safeTerminalText(event.memory.summary.slice(0, 200))}`
++        : undefined;
++    case 'skill.prefetch':
++      return Array.isArray(event.skills) && event.skills.length
++        ? `prefetch: ${event.skills.map((s) => safeTerminalText(s)).join(', ')}`
++        : undefined;
++    default:
++      return undefined;
++  }
++}
++
++/**
++ * Headless mode (`maos-industrial ring -p "<instruction>" [--json]
++ * [--thread <id>] [--yes-to none]`, or `--resume <runId>` to poll).
++ * Never auto-approves: consequential steps end as awaiting_approval,
++ * exit code 3, with a resume hint. There is deliberately NO --yes flag
++ * for consequential tools.
++ *
++ * Exit codes: 0 completed, 1 failed, 2 refused/cancelled, 3 awaiting approval.
++ */
++// Snapshot alias for wire-shape assertions in tests.
++export type { RingAgentWireEvent as RingHeadlessWireEvent };
++
++export async function runRingHeadless(
++  options: RingHeadlessOptions,
++): Promise<{ exitCode: RingCliExitCode; runId?: string }> {
++  const projectRoot = path.resolve(options.projectRoot || process.cwd());
++  const output = options.output || process.stdout;
++  if (options.yesTo !== undefined && options.yesTo !== 'none') {
++    throw new Error(
++      "Headless mode never auto-approves: only '--yes-to none' is accepted.",
++    );
++  }
++  const services = resolveServices(projectRoot, options.services);
++
++  if (options.resumeRunId) {
++    return pollExistingRun(services, options.resumeRunId, {
++      json: options.json,
++      output,
++    });
++  }
++
++  const instruction = (options.instruction || '').trim();
++  if (!instruction) {
++    throw new Error('instruction is required and must be a non-empty string.');
++  }
++
++  let context: Record<string, unknown> = {};
++  const parsed = parseRingSkillCommand(instruction);
++  if (parsed) {
++    // Same server-side skill path the GUI uses: skillName/skillArg/skillRole.
++    context = {
++      skillName: parsed.skill.name,
++      skillArg: parsed.arg,
++      skillRole: 'operator',
++    };
++  }
++  if (options.thread !== undefined) {
++    if (!isRingThreadId(options.thread)) {
++      throw new Error(`Thread '${options.thread}' was not found.`);
++    }
++    const thread = services.ringThread.getThread(options.thread);
++    if (!thread) throw new Error(`Thread '${options.thread}' was not found.`);
++    context.threadId = options.thread;
++  }
++
++  const runId = services.ringAgent.startRun(instruction, {
++    ...(context as {
++      skillName?: string;
++      skillArg?: string;
++      skillRole?: string;
++      threadId?: string;
++    }),
++  });
++  const terminal = await pollExistingRun(services, runId, {
++    json: options.json,
++    output,
++    live: true,
++  });
++  return { exitCode: terminal.exitCode, runId };
++}
++
++async function pollExistingRun(
++  services: RingCliServices,
++  runId: string,
++  opts: { json?: boolean; output: Writable; live?: boolean },
++): Promise<{ exitCode: RingCliExitCode; runId: string }> {
++  const { output } = opts;
++  const printed: PrintedKeys = { seen: new Set<string>() };
++
++  const emitHuman = (event: RingAgentWireEvent): void => {
++    if (opts.json) {
++      printWireJson(output, event, printed);
++      return;
++    }
++    const line = renderWireHuman(event);
++    if (line !== undefined) output.write(`${line}\n`);
++  };
++
++  // Replay events already recorded before we subscribed (run.started fires
++  // synchronously inside startRun), then follow the live stream. The
++  // printed-key set dedupes the overlap window.
++  const replay = (): void => {
++    const snap = services.ringAgent.getRun(runId);
++    if (!snap) return;
++    for (const event of snap.events) emitHuman(event);
++  };
++
++  let unsubscribe: (() => void) | undefined;
++  if (opts.live) {
++    unsubscribe = services.ringAgent.onStreamEvent((emittedRunId, event) => {
++      if (emittedRunId !== runId) return;
++      emitHuman(event);
++    });
++    replay();
++  } else {
++    replay();
++  }
++
++  try {
++    for (;;) {
++      const snap = await services.ringAgent.waitForRun(runId, 60000);
++      if (!snap) throw new Error(`Ring run '${runId}' was not found.`);
++      if (snap.status === 'running') continue;
++      if (snap.status === 'awaiting_approval') {
++        const pending = snap.pendingApproval;
++        if (opts.json) {
++          output.write(
++            `${JSON.stringify({
++              type: 'run.awaiting_approval',
++              runId,
++              approvalId: pending?.approvalId,
++              tool: pending?.toolName,
++              resumeHint: resumeHint(runId),
++            })}\n`,
++          );
++        } else {
++          output.write(
++            `Approve "${safeTerminalText(pending?.toolName ?? 'unknown')} — ${safeTerminalText(pending?.summary ?? '')}"? [y/N]\n`,
++          );
++          output.write(
++            `Run ${runId} is awaiting approval (headless never auto-approves). Resume with: ${resumeHint(runId)}\n`,
++          );
++        }
++        return { exitCode: RING_CLI_EXIT.AWAITING_APPROVAL, runId };
++      }
++      if (snap.status === 'completed') {
++        if (opts.json) {
++          output.write(
++            `${JSON.stringify({ type: 'run.completed', runId, finalAnswer: snap.finalAnswer })}\n`,
++          );
++        } else if (snap.finalAnswer) {
++          output.write(`${safeTerminalText(snap.finalAnswer)}\n`);
++        }
++        return { exitCode: ringExitForSnapshot(snap), runId };
++      }
++      if (snap.status === 'cancelled') {
++        if (opts.json) output.write(`${JSON.stringify({ type: 'run.cancelled', runId })}\n`);
++        else output.write(`Run ${runId} was cancelled.\n`);
++        return { exitCode: RING_CLI_EXIT.REFUSED_OR_CANCELLED, runId };
++      }
++      if (opts.json) {
++        output.write(
++          `${JSON.stringify({ type: 'run.failed', runId, error: snap.error })}\n`,
++        );
++      } else {
++        output.write(
++          `Run ${runId} failed: ${safeTerminalText(snap.error ?? 'unknown error')}\n`,
++        );
++      }
++      return { exitCode: RING_CLI_EXIT.FAILED, runId };
++    }
++  } finally {
++    if (unsubscribe) unsubscribe();
++  }
++}
++
++// ─── Interactive REPL ─────────────────────────────────────────
++
++export interface RingReplOptions {
++  projectRoot?: string;
++  input?: Readable;
++  output?: Writable;
++  services?: RingCliServiceOverrides;
++  /** Test hook: answers to approval prompts, consumed in order. Default: deny. */
++  approvalAnswers?: string[];
++}
++
++const REPL_COMMANDS_HELP = [
++  'Ring agent — same runs, threads and approvals as the GUI.',
++  'Type a question or instruction, or one of:',
++  '  /handover   shift handover note (needs approval to save)',
++  '  /rca        root-cause starter (5 Whys + fishbone)',
++  '  /permit     permit-to-work checklist',
++  '  /loto       lockout/tagout steps (verify against your site procedure)',
++  '  /sop <eq>   read the SOP for equipment (e.g. /sop T-07)',
++  '  /report     shift report draft (needs approval to save)',
++  '  /threads    list threads in this project',
++  '  /new [title] [role]  start a new thread',
++  '  /resume <id>         resume a thread (or attach to a pending ring run)',
++  '  /role <r>            set role (operator|maintenance|safety|manager)',
++  '  /verify              audit chain + current thread state',
++  '  /help                this help',
++  '  cancel      cancel the running run (Ctrl+C once does the same)',
++  '  exit        leave the Ring REPL',
++];
++
++function showRingHelp(output: Writable, mode: RingMode, role: string): void {
++  output.write(
++    [...REPL_COMMANDS_HELP, `Mode: ${mode === 'hosted' ? 'HOSTED' : 'EVIDENCE-ONLY'} · Role: ${safeTerminalText(role)}`].join(
++      '\n',
++    ) + '\n',
++  );
++}
++
++interface ReplSession {
++  role: RingRole;
++  threadId?: string;
++  activeRunId?: string;
++  /** Ctrl+C arrival count while a run is active (1 = cancel, 2 = exit). */
++  cancelCount?: number;
++}
++
++function skillAllowedForRole(skill: RingSkill, role: RingRole): boolean {
++  return !skill.roles || skill.roles.includes(role);
++}
++
++/**
++ * Interactive Ring REPL: plain readline + chalk (no Ink/TUI).
++ * Driven by injected stdin/stdout in tests (IndustrialReplOptions pattern).
++ *
++ * Streaming: streamed model text prints as it arrives (real model.delta
++ * only); when the provider does not stream, the whole text prints once,
++ * labelled. Plan checklists redraw as [x]/[ ] lines; tool lines render as
++ * `▸ analyze_telemetry … ✓ CRITICAL · RMS 2.637`; the approval prompt
++ * `Approve "…" ? [y/N]` defaults to No and is recorded in audit; artifact
++ * lines carry absolute paths. Ctrl+C once cancels the run, twice exits.
++ */
++export function runRingRepl(options: RingReplOptions = {}): Promise<void> {
++  const input = options.input || process.stdin;
++  const output = options.output || process.stdout;
++  const projectRoot = path.resolve(options.projectRoot || process.cwd());
++  const services = resolveServices(projectRoot, options.services);
++  const approvalAnswers = options.approvalAnswers
++    ? [...options.approvalAnswers]
++    : [];
++
++  const writeLine = (value: string): void => {
++    output.write(`${value}\n`);
++  };
++
++  const session: ReplSession = { role: DEFAULT_RING_ROLE };
++  const mode = detectRingMode(projectRoot);
++  const badge = mode === 'hosted' ? 'HOSTED' : 'EVIDENCE-ONLY';
++
++  const rl = readline.createInterface({
++    input,
++    output,
++    terminal: Boolean(
++      (output as Writable & { isTTY?: boolean }).isTTY,
++    ),
++  });
++
++  writeLine(
++    `Ring · ${badge} · role ${session.role}. Type /help for commands.`,
++  );
++  rl.setPrompt('ring> ');
++
++  return new Promise((resolve) => {
++    let busy = false;
++    let closing = false;
++    let sigintCount = 0;
++
++    const finish = (): void => {
++      closing = true;
++      rl.close();
++    };
++
++    const recordApprovalAudit = (data: Record<string, unknown>): void => {
++      try {
++        services.audit.recordAuditEvent(
++          {
++            category: 'approval',
++            source: 'ring-cli',
++            data,
++          } as never,
++          false,
++        );
++      } catch {
++        /* audit must not break the CLI */
++      }
++    };
++
++    const askApproval = (question: string): Promise<boolean> => {
++      const canned = approvalAnswers.shift();
++      if (canned !== undefined) {
++        return Promise.resolve(/^y(es)?$/i.test(canned.trim()));
++      }
++      rl.pause();
++      return new Promise((res) => {
++        const q = readline.createInterface({ input, output });
++        q.question(`${question} `, (answer) => {
++          q.close();
++          rl.resume();
++          res(/^y(es)?$/i.test(answer.trim()));
++        });
++      });
++    };
++
++    /** Drive a run to a terminal state (or approval pause), rendering events. */
++    const driveRun = async (runId: string): Promise<void> => {
++      let sawDelta = false;
++      const handleEvent = (event: RingAgentWireEvent): void => {
++        if (event.type === 'model.delta') {
++          sawDelta = true;
++          if (typeof event.delta === 'string' && event.delta) {
++            output.write(safeTerminalText(event.delta));
++          }
++          return;
++        }
++        if (event.type === 'model.turn') {
++          // Whole text when the provider doesn't stream (labelled); skip
++          // when deltas already streamed this text live.
++          if (!sawDelta && typeof event.text === 'string' && event.text) {
++            writeLine(
++              safeTerminalText(
++                `(whole text — provider does not stream) ${event.text}`,
++              ),
++            );
++          }
++          return;
++        }
++        const line = renderWireHuman(event);
++        if (line !== undefined) {
++          const fixed =
++            event.type === 'artifact.created' &&
++            event.artifact &&
++            typeof event.artifact.path === 'string'
++              ? `artifact: ${safeTerminalText(path.resolve(projectRoot, event.artifact.path))}`
++              : line;
++          writeLine(fixed);
++        }
++      };
++      const unsubscribe = services.ringAgent.onStreamEvent(
++        (emittedRunId, event) => {
++          if (emittedRunId !== runId) return;
++          handleEvent(event);
++        },
++      );
++      // Replay events recorded before we subscribed: a provider whose
++      // generateStream observes deltas synchronously (loopback mocks) emits
++      // model.delta inside startRun, before this subscription exists. The
++      // replay keeps those deltas (and sets sawDelta) so the labelled
++      // whole-text fallback never double-prints them.
++      try {
++        const before = services.ringAgent.getRun(runId);
++        if (before) {
++          for (const event of before.events) handleEvent(event);
++        }
++      } catch {
++        /* replay is best effort; the live stream still follows */
++      }
++      try {
++        for (;;) {
++          const snap = await services.ringAgent.waitForRun(runId, 60000);
++          if (!snap) {
++            writeLine(chalk.red(`Run '${safeTerminalText(runId)}' was not found.`));
++            return;
++          }
++          if (snap.status === 'running') continue;
++          if (snap.status === 'awaiting_approval') {
++            const pending = snap.pendingApproval;
++            if (!pending) {
++              writeLine(chalk.red('Run is awaiting approval with no pending approval.'));
++              return;
++            }
++            const answer = await askApproval(
++              `Approve "${pending.toolName} — ${pending.summary}"? [y/N]`,
++            );
++            // Default No: anything but an explicit yes denies. Recorded in audit.
++            recordApprovalAudit({
++              event: 'RING_CLI_APPROVAL_PROMPT',
++              runId,
++              approvalId: pending.approvalId,
++              toolName: pending.toolName,
++              decision: answer ? 'approved' : 'denied',
++            });
++            services.ringAgent.resolveApproval(
++              runId,
++              pending.approvalId,
++              answer ? 'approved' : 'denied',
++            );
++            continue;
++          }
++          if (snap.status === 'completed') {
++            // Hosted streaming already printed deltas live; hosted
++            // non-streamed whole text printed via `model.turn`. Only
++            // evidence-only (never streamed) prints the final answer here.
++            if (snap.finalAnswer && mode === 'evidence-only') {
++              writeLine(safeTerminalText(snap.finalAnswer));
++            }
++            if (snap.finalAnswer && sawDelta) {
++              // Final answer already streamed live; nothing more to print.
++            }
++            return;
++          }
++          if (snap.status === 'cancelled') {
++            writeLine(chalk.yellow('Run cancelled.'));
++            return;
++          }
++          writeLine(
++            chalk.red(`Run failed: ${safeTerminalText(snap.error ?? 'unknown error')}`),
++          );
++          return;
++        }
++      } finally {
++        unsubscribe();
++        if (session.activeRunId === runId) session.activeRunId = undefined;
++        sigintCount = 0;
++      }
++    };
++
++    const startInstruction = async (
++      instruction: string,
++      startContext: Record<string, unknown>,
++    ): Promise<void> => {
++      let runId: string;
++      try {
++        runId = services.ringAgent.startRun(instruction, {
++          ...(startContext as {
++            skillName?: string;
++            skillArg?: string;
++            skillRole?: string;
++            threadId?: string;
++            role?: string;
++          }),
++        });
++      } catch (err) {
++        writeLine(
++          chalk.red(
++            `Error: ${safeTerminalText(err instanceof Error ? err.message : String(err))}`,
++          ),
++        );
++        return;
++      }
++      session.activeRunId = runId;
++      const snap = services.ringAgent.getRun(runId);
++      if (snap) writeLine(`run ${runId} · ${snap.mode === 'hosted' ? 'HOSTED' : 'EVIDENCE-ONLY'}`);
++      await driveRun(runId);
++    };
++
++    const handleLocal = async (line: string): Promise<boolean> => {
++      const trimmed = line.trim();
++      if (!trimmed) return true;
++      if (trimmed === 'exit' || trimmed === 'quit') {
++        finish();
++        return false;
++      }
++      if (trimmed === 'cancel' || trimmed === '/cancel') {
++        if (session.activeRunId) {
++          services.ringAgent.cancelRun(session.activeRunId);
++          writeLine(chalk.yellow('Cancellation requested.'));
++        } else {
++          writeLine('No run is currently active.');
++        }
++        return true;
++      }
++      if (trimmed === '/help' || trimmed === 'help' || trimmed === '?') {
++        showRingHelp(output, mode, session.role);
++        return true;
++      }
++      if (trimmed === '/threads') {
++        const ids = services.ringThread.listThreadIds();
++        if (ids.length === 0) {
++          writeLine('(no threads yet — use /new to start one)');
++        }
++        for (const id of ids) {
++          writeLine(`${safeTerminalText(id)}${id === session.threadId ? ' *' : ''}`);
++        }
++        return true;
++      }
++      if (trimmed === '/new' || trimmed.startsWith('/new ')) {
++        const rest = trimmed
++          .slice('/new'.length)
++          .trim()
++          .split(/\s+/)
++          .filter(Boolean);
++        let title: string | undefined;
++        let role: RingRole = session.role;
++        for (const part of rest) {
++          if (isRingRole(part)) role = part;
++          else title = title === undefined ? part : `${title} ${part}`;
++        }
++        const thread = services.ringThread.createThread(title, role);
++        session.threadId = thread.threadId;
++        session.role = thread.role;
++        writeLine(
++          `thread ${safeTerminalText(thread.threadId)} (${safeTerminalText(thread.role)})`,
++        );
++        return true;
++      }
++      if (trimmed === '/resume' || trimmed.startsWith('/resume ')) {
++        const id = trimmed.slice('/resume'.length).trim().split(/\s+/)[0];
++        if (!id) {
++          writeLine(chalk.red('Usage: /resume <thread-id|run-id>'));
++          return true;
++        }
++        if (isRingThreadId(id)) {
++          const thread = services.ringThread.getThread(id);
++          if (!thread) {
++            writeLine(chalk.red(`Thread '${safeTerminalText(id)}' was not found.`));
++            return true;
++          }
++          session.threadId = thread.threadId;
++          session.role = thread.role;
++          writeLine(
++            `resumed ${safeTerminalText(thread.threadId)} (${safeTerminalText(thread.role)})`,
++          );
++          return true;
++        }
++        // Attach to an existing run (e.g. left awaiting_approval by headless).
++        const snap = services.ringAgent.getRun(id);
++        if (!snap) {
++          writeLine(chalk.red(`No thread or run '${safeTerminalText(id)}' was found.`));
++          return true;
++        }
++        session.activeRunId = id;
++        await driveRun(id);
++        return true;
++      }
++      if (trimmed === '/role' || trimmed.startsWith('/role ')) {
++        const want = trimmed.slice('/role'.length).trim().split(/\s+/)[0];
++        if (!want || !isRingRole(want)) {
++          writeLine(chalk.red('Usage: /role <operator|maintenance|safety|manager>'));
++          return true;
++        }
++        session.role = (getRingRolePersona(want)?.role ?? DEFAULT_RING_ROLE) as RingRole;
++        writeLine(`role ${safeTerminalText(session.role)}`);
++        return true;
++      }
++      if (trimmed === '/verify') {
++        const chain = services.audit.verifyChain();
++        writeLine(`Audit chain: ${chain.valid ? 'valid' : 'invalid'}`);
++        if (!chain.valid) {
++          for (const e of chain.errors) writeLine(safeTerminalText(e));
++        }
++        if (session.threadId) {
++          const thread = services.ringThread.getThread(session.threadId);
++          writeLine(
++            thread
++              ? `Thread ${thread.threadId}: ${thread.runs.length} run(s), role ${thread.role}`
++              : `Thread '${session.threadId}' was not found.`,
++          );
++        } else {
++          writeLine('No active thread.');
++        }
++        return true;
++      }
++      const skillParsed = parseRingSkillCommand(trimmed);
++      if (skillParsed) {
++        if (!skillAllowedForRole(skillParsed.skill, session.role)) {
++          writeLine(
++            chalk.red(
++              `Skill /${skillParsed.skill.name} is not available to role ${session.role}.`,
++            ),
++          );
++          return true;
++        }
++        if (skillParsed.skill.name === 'sop' && !skillParsed.arg) {
++          writeLine(chalk.red('Usage: /sop <equipment> — for example /sop T-07.'));
++          return true;
++        }
++        await startInstruction(trimmed, {
++          skillName: skillParsed.skill.name,
++          skillArg: skillParsed.arg,
++          skillRole: session.role,
++          ...(session.threadId ? { threadId: session.threadId } : {}),
++        });
++        return true;
++      }
++      if (trimmed.startsWith('/')) {
++        const name = trimmed.split(/\s+/)[0];
++        const known = listRingSkills().some((s) => `/${s.name}` === name);
++        if (!known) {
++          writeLine(
++            chalk.red(`Unknown command '${safeTerminalText(name)}'. Type /help for supported commands.`),
++          );
++          return true;
++        }
++        // Known skill that slipped past the parse above (should not happen):
++        // run it as a plain instruction so the model path handles it.
++      }
++      await startInstruction(trimmed, {
++        role: session.role,
++        ...(session.threadId ? { threadId: session.threadId } : {}),
++      });
++      return true;
++    };
++
++    rl.prompt();
++    rl.on('line', (line) => {
++      if (busy) {
++        const t = line.trim();
++        if ((t === 'cancel' || t === '/cancel') && session.activeRunId) {
++          services.ringAgent.cancelRun(session.activeRunId);
++          writeLine(chalk.yellow('Cancellation requested.'));
++        } else {
++          writeLine('A run is in progress. Type `cancel` to stop it.');
++        }
++        return;
++      }
++      busy = true;
++      void handleLocal(line)
++        .catch((err) => {
++          writeLine(
++            chalk.red(
++              `Error: ${safeTerminalText(err instanceof Error ? err.message : String(err))}`,
++            ),
++          );
++        })
++        .finally(() => {
++          busy = false;
++          if (!closing) rl.prompt();
++        });
++    });
++
++    // Ctrl+C once cancels the active run (existing cancel path); twice exits.
++    rl.on('SIGINT', () => {
++      sigintCount += 1;
++      if (session.activeRunId) {
++        try {
++          services.ringAgent.cancelRun(session.activeRunId);
++        } catch {
++          /* best effort */
++        }
++        if (sigintCount >= 2) {
++          finish();
++          return;
++        }
++        writeLine(chalk.yellow('Cancellation requested (Ctrl+C again to exit).'));
++        return;
++      }
++      finish();
++    });
++
++    rl.on('close', () => {
++      if (session.activeRunId) {
++        try {
++          services.ringAgent.cancelRun(session.activeRunId);
++        } catch {
++          /* best effort */
++        }
++      }
++      resolve();
++    });
++  });
++}
+diff --git a/tests/gui/ring-devb-surface.test.ts b/tests/gui/ring-devb-surface.test.ts
+index 2c1a43b..6411972 100644
+--- a/tests/gui/ring-devb-surface.test.ts
++++ b/tests/gui/ring-devb-surface.test.ts
+@@ -105,7 +105,7 @@ describe('ringVisualStateForRun', () => {
+         { type: 'tool.result', ts: 't', tool: 'x', toolCallId: 'c1' },
+       ]),
+     ).toBe('thinking');
+-    expect(ringVisualStateForRun('awaiting_approval', [])).toBe('waiting-for-approval');
++    expect(ringVisualStateForRun('awaiting_approval', [])).toBe('needs-you');
+     expect(ringVisualStateForRun('completed', [])).toBe('done');
+     expect(ringVisualStateForRun('failed', [])).toBe('error');
+     expect(ringVisualStateForRun('cancelled', [])).toBe('error');
+@@ -114,12 +114,12 @@ describe('ringVisualStateForRun', () => {
+ 
+ describe('RingMark', () => {
+   it('renders one mark per state with an honest label, no fake progress', async () => {
+-    for (const state of ['idle', 'thinking', 'using-tool', 'waiting-for-approval', 'done', 'error'] as const) {
++    for (const state of ['idle', 'thinking', 'using-tool', 'waiting-for-approval', 'needs-you', 'done', 'error'] as const) {
+       const view = mount(React.createElement(RingMark, { state }));
+       await view.render();
+       const mark = view.container.querySelector('[data-testid="ring-mark"]');
+       expect(mark?.getAttribute('data-state')).toBe(state);
+-      expect(mark?.getAttribute(String("aria-label"))).toBe("Ring: " + ({idle:"Idle",thinking:"Thinking","using-tool":"Using tool","waiting-for-approval":"Waiting for approval",done:"Done",error:"Needs attention"}[state]));
++      expect(mark?.getAttribute(String("aria-label"))).toBe("Ring: " + ({idle:"Idle",thinking:"Thinking","using-tool":"Using tool","waiting-for-approval":"Waiting for approval","needs-you":"Needs you",done:"Done",error:"Needs attention"}[state]));
+       view.unmount();
+     }
+   });
+@@ -456,7 +456,7 @@ describe('RingOverlay', () => {
+       await new Promise((r) => setTimeout(r, 0));
+     });
+     expect(view.container.querySelector('[data-testid="ring-approval-card"]')).toBeTruthy();
+-    expect(view.container.querySelector('[data-testid="ring-mark"]')?.getAttribute('data-state')).toBe('waiting-for-approval');
++    expect(view.container.querySelector('[data-testid="ring-mark"]')?.getAttribute('data-state')).toBe('needs-you');
+     await act(async () => {
+       view.container.querySelector<HTMLButtonElement>('[data-testid="ring-approval-allow"]')?.click();
+       await new Promise((r) => setTimeout(r, 0));
+@@ -619,6 +619,197 @@ describe('RingOverlay', () => {
+     view2.unmount();
+   });
+ 
++  it('TASK DEV-C-FEEL-01 (feel 1): overlay input is focused on summon; Enter sends, Escape hides, ArrowUp recalls', async () => {
++    let hidden = 0;
++    window.maosNative = {
++      initialize: async () => ({}),
++      expandRing: () => {},
++      hideRingOverlay: () => { hidden += 1; },
++    };
++    const seen = [];
++    const client = {
++      startRun: async (input) => { seen.push(input.instruction); return { runId: 'run-1' }; },
++      getRun: async () => ({ status: 'completed', mode: 'hosted', events: [] }),
++      cancelRun: async () => {},
++      decideApproval: async () => {},
++      downloadArtifact: async () => {},
++    };
++    const view = mount(React.createElement(RingOverlay, { runClient: client, pollIntervalMs: 60000 }));
++    await view.render();
++    const input = () => view.container.querySelector('[data-testid="ring-overlay-input"]');
++    // focus lands in the input on summon
++    expect(document.activeElement).toBe(input());
++    // Enter sends (form submit via React onSubmit)
++    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
++    await act(async () => {
++      setter?.call(input(), 'check turbine seven');
++      input().dispatchEvent(new window.Event('input', { bubbles: true }));
++    });
++    await act(async () => {
++      view.container.querySelector('form').dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }));
++      await new Promise((r) => setTimeout(r, 0));
++    });
++    expect(seen).toEqual(['check turbine seven']);
++    // ArrowUp in an empty input recalls the last prompt
++    expect(input().value).toBe('');
++    await act(async () => {
++      input().dispatchEvent(new window.KeyboardEvent('keydown', { key: 'ArrowUp', bubbles: true }));
++    });
++    expect(input().value).toBe('check turbine seven');
++    // Escape hides the overlay through the toggle path (no close semantics)
++    await act(async () => {
++      input().dispatchEvent(new window.KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
++    });
++    expect(hidden).toBe(1);
++    expect(document.activeElement).not.toBe(input());
++    delete window.maosNative;
++    view.unmount();
++  });
++
++  it('TASK DEV-C-FEEL-01 (feel 2): first visible output lands immediately on send (honest pending line, no invented plan)', async () => {
++    let release;
++    const gate = new Promise((resolve) => { release = resolve; });
++    const client = {
++      startRun: async () => { await gate; return { runId: 'run-1' }; },
++      getRun: async () => ({ status: 'running', mode: 'hosted', events: [{ type: 'run.started', ts: 't' }] }),
++      cancelRun: async () => {},
++      decideApproval: async () => {},
++      downloadArtifact: async () => {},
++    };
++    const view = mount(React.createElement(RingOverlay, { runClient: client, pollIntervalMs: 60000 }));
++    await view.render();
++    const input = view.container.querySelector('[data-testid="ring-overlay-input"]');
++    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
++    await act(async () => {
++      setter?.call(input, 'summarize');
++      input.dispatchEvent(new window.Event('input', { bubbles: true }));
++    });
++    await act(async () => {
++      view.container.querySelector('form').dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }));
++      await new Promise((r) => setTimeout(r, 0));
++    });
++    // the honest pending line is visible while the run start is still in flight
++    const thinking = view.container.querySelector('[data-testid="ring-overlay-thinking"]');
++    expect(thinking).toBeTruthy();
++    expect(thinking.textContent).toContain('Working on it');
++    // no invented plan/tools: the pending transcript carries no plan checklist, tool chip, or live text
++    expect(view.container.querySelector('[data-testid="ring-plan-checklist"]')).toBeNull();
++    expect(view.container.querySelector('[data-testid="ring-tool-chip"]')).toBeNull();
++    expect(view.container.querySelector('[data-testid="ring-live-text"]')).toBeNull();
++    release();
++    await view.flush();
++    view.unmount();
++  });
++
++  it('TASK DEV-C-FEEL-01 (feel 3): bottom-line-first with units; tool details collapsed', async () => {
++    const completed = {
++      status: 'completed',
++      mode: 'hosted',
++      events: [],
++      finalAnswer: 'Local evidence summary: WARNING verdict, RMS 4.125 mm/s. No model ran.',
++    };
++    const bview = mount(React.createElement(RingOverlay, { runClient: overlayClient(completed), pollIntervalMs: 60000 }));
++    await bview.render();
++    const binput = bview.container.querySelector('[data-testid="ring-overlay-input"]');
++    const bsetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
++    await act(async () => {
++      bsetter?.call(binput, 'summarize');
++      binput.dispatchEvent(new window.Event('input', { bubbles: true }));
++    });
++    await act(async () => {
++      bview.container.querySelector('form').dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }));
++      await new Promise((r) => setTimeout(r, 0));
++    });
++    const bline = bview.container.querySelector('[data-testid="ring-bottom-line"]');
++    expect(bline).toBeTruthy();
++    expect(bline.textContent).toContain('WARNING');
++    expect(bline.textContent).toContain('4.125 mm/s');
++    bview.unmount();
++    const state = {
++      status: 'completed',
++      mode: 'hosted',
++      events: [
++        { type: 'run.started', ts: 't0' },
++        {
++          type: 'tool.result',
++          ts: 't1',
++          tool: 'analyze_telemetry',
++          toolCallId: 'c1',
++          resultSummary: 'WARNING: RMS 4.125 mm/s above the demo limit',
++          verdict: 'WARNING',
++          overallRms: 4.125,
++          sources: ['demo/industrial/turbine_vibration_log.csv'],
++        },
++      ],
++    };
++    const view = mount(React.createElement(RingOverlay, { runClient: overlayClient(state), pollIntervalMs: 60000 }));
++    await view.render();
++    const vinput = view.container.querySelector('[data-testid="ring-overlay-input"]');
++    const vsetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
++    await act(async () => {
++      vsetter?.call(vinput, 'check vibration');
++      vinput.dispatchEvent(new window.Event('input', { bubbles: true }));
++    });
++    await act(async () => {
++      view.container.querySelector('form').dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }));
++      await new Promise((r) => setTimeout(r, 0));
++    });
++    const line = view.container.querySelector('[data-testid="ring-bottom-line"]');
++    expect(line).toBeTruthy();
++    expect(line.textContent).toContain('WARNING');
++    expect(line.textContent).toContain('4.125 mm/s');
++    // bottom line renders before the transcript evidence rows
++    const transcript = view.container.querySelector('[data-testid="ring-overlay-transcript"]');
++    const order = [...transcript.querySelectorAll('[data-testid]')].map((el) => el.getAttribute('data-testid'));
++    expect(order.indexOf('ring-bottom-line')).toBeLessThan(order.indexOf('ring-tool-chip'));
++    view.unmount();
++  });
++
++  it('TASK DEV-C-FEEL-01 (feel 4): needs-you state is distinct and static (no pulse while waiting)', async () => {
++    expect(ringVisualStateForRun('awaiting_approval', [])).toBe('needs-you');
++    expect(
++      ringVisualStateForRun('running', [
++        { type: 'approval.pending', ts: 't', approvalId: 'a1', action: 'Write note' },
++      ]),
++    ).toBe('needs-you');
++    // resolved approvals fall back to thinking, not needs-you
++    expect(
++      ringVisualStateForRun('running', [
++        { type: 'approval.pending', ts: 't', approvalId: 'a1', action: 'Write note' },
++        { type: 'approval.resolved', ts: 't', approvalId: 'a1', decision: 'approved' },
++      ]),
++    ).toBe('thinking');
++    const view = mount(React.createElement(RingMark, { state: 'needs-you' }));
++    await view.render();
++    const mark = view.container.querySelector('[data-testid="ring-mark"]');
++    expect(mark?.getAttribute('data-state')).toBe('needs-you');
++    expect(mark?.getAttribute('aria-label')).toBe('Ring: Needs you');
++    // static ring while waiting: no SVG pulse animation
++    expect(mark?.querySelector('animate')).toBeNull();
++    view.unmount();
++    // overlay shows the needs-you banner above the transcript
++    const pending = {
++      status: 'awaiting_approval',
++      mode: 'hosted',
++      events: [{ type: 'approval.pending', ts: 't', approvalId: 'a1', action: 'Write safety note' }],
++    };
++    const ov = mount(React.createElement(RingOverlay, { runClient: overlayClient(pending), pollIntervalMs: 60000 }));
++    await ov.render();
++    const oinput = ov.container.querySelector('[data-testid="ring-overlay-input"]');
++    const osetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')?.set;
++    await act(async () => {
++      osetter?.call(oinput, 'check vibration');
++      oinput.dispatchEvent(new window.Event('input', { bubbles: true }));
++    });
++    await act(async () => {
++      ov.container.querySelector('form').dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }));
++      await new Promise((r) => setTimeout(r, 0));
++    });
++    expect(ov.container.querySelector('[data-testid="ring-overlay-needs-you"]')?.textContent).toContain('Needs you');
++    expect(ov.container.querySelector('[data-testid="ring-mark"]')?.getAttribute('data-state')).toBe('needs-you');
++    ov.unmount();
++  });
++
+   it('evidence-only badge stays exact in the overlay', async () => {
+     const state: RingRunState = { status: 'completed', mode: 'evidence-only', events: [], finalAnswer: 'Local summary.' };
+     const view = mount(React.createElement(RingOverlay, { runClient: overlayClient(state), pollIntervalMs: 60_000 }));
+@@ -815,6 +1006,29 @@ describe('desktop overlay host (plain node)', () => {
+     expect(second).toBe('hidden');
+     host.overlayState.window = null;
+   });
++
++  it('TASK DEV-C-FEEL-01 (feel 1): hideRingOverlay hides through the same toggle path (no close semantics)', async () => {
++    const host = require('../../desktop/ring-overlay-host.cjs') as typeof import('../../desktop/ring-overlay-host.cjs');
++    // no window: returns false, never throws
++    host.overlayState.window = null;
++    expect(host.hideRingOverlay()).toBe(false);
++    // visible window: hide() is called, window is not destroyed/closed
++    const calls: string[] = [];
++    host.overlayState.window = {
++      isDestroyed: () => false,
++      isVisible: () => true,
++      hide: () => { calls.push('hide'); },
++      destroy: () => { calls.push('destroy'); },
++      close: () => { calls.push('close'); },
++    };
++    expect(host.hideRingOverlay()).toBe(true);
++    expect(calls).toEqual(['hide']);
++    // already-hidden window: no-op
++    host.overlayState.window = { isDestroyed: () => false, isVisible: () => false, hide: () => { calls.push('hide2'); } };
++    expect(host.hideRingOverlay()).toBe(false);
++    expect(calls).toEqual(['hide']);
++    host.overlayState.window = null;
++  });
+ });
+ 
+ describe('TASK RING-DEV-B-01: overlay Expand handoff + explicit screenshot', () => {
+diff --git a/tests/gui/ring-workspace.test.ts b/tests/gui/ring-workspace.test.ts
+index 33504c1..b50db46 100644
+--- a/tests/gui/ring-workspace.test.ts
++++ b/tests/gui/ring-workspace.test.ts
+@@ -166,6 +166,36 @@ async function sendInstruction(container: HTMLElement, text: string) {
+   });
+ }
+ 
++describe('TASK DEV-C-FEEL-01: bottom-line-first in the full view', () => {
++  it('renders the verdict line with units before tool evidence, details collapsed', async () => {
++    const { client } = makeClient([EVIDENCE_ONLY_DONE]);
++    const view = await mountWorkspace({
++      agents: buildRingRoster(CONFIG_AGENTS),
++      runClient: client,
++      pollIntervalMs: 60000,
++    });
++    try {
++      await sendInstruction(view.container, 'Summarize telemetry');
++      const line = view.container.querySelector('[data-testid="ring-bottom-line"]');
++      expect(line, 'bottom line renders').toBeTruthy();
++      expect(line.textContent).toContain('WARNING');
++      expect(line.textContent).toContain('4.125 mm/s');
++      const transcript = view.container.querySelector('[data-testid="ring-transcript"]') ?? view.container;
++      const order = [...transcript.querySelectorAll('[data-testid]')].map((el) => el.getAttribute('data-testid'));
++      expect(order.indexOf('ring-bottom-line')).toBeLessThan(order.indexOf('ring-tool-chip'));
++      // tool details stay collapsed until expanded: no expanded result row by default
++      expect(view.container.querySelector('[data-testid="ring-tool-result"]')).toBeNull();
++      // RMS is shown with units in the expanded tool result
++      await act(async () => {
++        view.container.querySelector('[data-testid="ring-tool-chip"] button')?.dispatchEvent(new window.Event('click', { bubbles: true }));
++      });
++      expect(view.container.querySelector('[data-testid="ring-tool-rms"]')?.textContent).toContain('mm/s');
++    } finally {
++      view.unmount();
++    }
++  });
++});
++
+ describe('ring roster', () => {
+   it('renders agents from a config fixture with Ring as lead, ids, roles, and status dots', () => {
+     const roster = buildRingRoster(CONFIG_AGENTS);
+diff --git a/tests/industrial/ring-cli.test.ts b/tests/industrial/ring-cli.test.ts
+new file mode 100644
+index 0000000..2f1930a
+--- /dev/null
++++ b/tests/industrial/ring-cli.test.ts
+@@ -0,0 +1,519 @@
++/**
++ * TASK DEV-A-CLI-01: Ring CLI tests.
++ *
++ * Evidence-only by default (BASETEN_API_KEY unset; no live calls). Hosted
++ * streaming uses an injected loopback-mock providerFactory. Temporary
++ * project roots carry the repo demo fixtures; nothing touches C:/maos.
++ */
++import { describe, expect, it, beforeEach, afterEach } from 'vitest';
++import * as fs from 'node:fs';
++import * as os from 'node:os';
++import * as path from 'node:path';
++import { PassThrough } from 'node:stream';
++import { BASETEN_API_KEY_ENV } from '../../src/backends/meta-api-policy';
++import type { IProvider, ProviderResponse } from '../../src/backends/provider';
++import { BASETEN_API_MODEL } from '../../src/backends/meta-api-policy';
++import { AuditService } from '../../src/service/audit-service';
++import { RingAgentService } from '../../src/service/ring-agent-service';
++import { RingThreadService } from '../../src/service/ring-thread-service';
++import {
++  RING_CLI_EXIT,
++  isRingRefusalAnswer,
++  runRingHeadless,
++  runRingRepl,
++  safeTerminalText,
++} from '../../src/industrial/ring-cli';
++
++const FIXTURES = [
++  'sop_turbine_vibration_monitoring.md',
++  'sop_pump_p12_monitoring.md',
++  'maintenance_report.txt',
++  'maintenance_report_p12.txt',
++  'safety_thresholds.json',
++  'turbine_vibration_log.csv',
++  'pump_p12_vibration_log.csv',
++];
++
++function makeTempRoot(): string {
++  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'maos-ring-cli-'));
++  fs.mkdirSync(path.join(root, '.maos'), { recursive: true });
++  fs.mkdirSync(path.join(root, 'demo', 'industrial'), { recursive: true });
++  const repoRoot = path.resolve(__dirname, '../..');
++  for (const f of FIXTURES) {
++    const src = path.join(repoRoot, 'demo', 'industrial', f);
++    if (fs.existsSync(src)) {
++      fs.copyFileSync(src, path.join(root, 'demo', 'industrial', f));
++    }
++  }
++  fs.writeFileSync(
++    path.join(root, '.maos', 'maos.config.json'),
++    JSON.stringify({
++      schemaVersion: 1,
++      projectName: 'ring-cli-test',
++      profile: {
++        id: 'industrial',
++        displayName: 'MAOS Industrial',
++        mode: 'sovereign-local',
++        zeroCloud: true,
++      },
++    }),
++  );
++  return root;
++}
++
++function makeServices(root: string, providerFactory?: () => IProvider) {
++  const audit = new AuditService(root);
++  const ringAgent = new RingAgentService({
++    projectRoot: root,
++    auditService: audit,
++    ...(providerFactory ? { providerFactory } : {}),
++  });
++  const ringThread = new RingThreadService(root);
++  return { ringAgent, ringThread, audit };
++}
++
++function waitForText(
++  output: PassThrough,
++  readText: () => string,
++  text: string,
++  after = 0,
++): Promise<void> {
++  if (readText().slice(after).includes(text)) return Promise.resolve();
++  return new Promise((resolve, reject) => {
++    const timer = setTimeout(
++      () =>
++        finish(
++          new Error(`Timed out waiting for CLI output: ${text}\n${readText()}`),
++        ),
++      15000,
++    );
++    const onData = (): void => {
++      if (readText().slice(after).includes(text)) finish();
++    };
++    const finish = (error?: Error): void => {
++      clearTimeout(timer);
++      output.off('data', onData);
++      if (error) reject(error);
++      else resolve();
++    };
++    output.on('data', onData);
++  });
++}
++
++function hostedMockProvider(
++  onGenerate?: (turn: number) => ProviderResponse,
++): () => IProvider {
++  let turn = 0;
++  const provider: IProvider = {
++    name: 'fake-ring-cli-loopback',
++    model: BASETEN_API_MODEL,
++    generate: async () => {
++      turn += 1;
++      if (onGenerate) return onGenerate(turn);
++      return {
++        content: 'Mocked hosted answer citing CRITICAL telemetry.',
++        toolCalls: [],
++        usage: { promptTokens: 1, completionTokens: 1, totalTokens: 2 },
++        model: BASETEN_API_MODEL,
++        latencyMs: 1,
++        finishReason: 'stop',
++      };
++    },
++  };
++  return () => provider;
++}
++
++function streamingMockProvider(chunks: string[], finalText: string): () => IProvider {
++  const provider: IProvider = {
++    name: 'fake-ring-cli-stream',
++    model: BASETEN_API_MODEL,
++    generate: async () => ({
++      content: finalText,
++      toolCalls: [],
++      usage: { promptTokens: 1, completionTokens: 1, totalTokens: 2 },
++      model: BASETEN_API_MODEL,
++      latencyMs: 1,
++      finishReason: 'stop',
++    }),
++    generateStream: async (_messages, _tools, options) => {
++      for (const chunk of chunks) {
++        options?.onDelta?.(chunk);
++      }
++      return {
++        content: finalText,
++        toolCalls: [],
++        usage: { promptTokens: 1, completionTokens: 1, totalTokens: 2 },
++        model: BASETEN_API_MODEL,
++        latencyMs: 1,
++        finishReason: 'stop',
++      };
++    },
++  };
++  return () => provider;
++}
++
++async function sendCommand(
++  input: PassThrough,
++  output: PassThrough,
++  readText: () => string,
++  command: string,
++  expected: string,
++): Promise<number> {
++  const start = readText().length;
++  input.write(`${command}\n`);
++  await waitForText(output, readText, expected, start);
++  await waitForText(output, readText, 'ring> ', readText().length);
++  return start;
++}
++
++function seedEngine(root: string): void {
++  const exe = process.platform === 'win32' ? 'maos-engine.exe' : 'maos-engine';
++  const candidates = [
++    path.resolve(__dirname, '../../rust/target/release', exe),
++    `C:/maos/rust/target/release/${exe}`,
++  ];
++  const found = candidates.find((c) => {
++    try {
++      return fs.existsSync(c);
++    } catch {
++      return false;
++    }
++  });
++  if (!found) return;
++  const dest = path.join(root, 'rust', 'target', 'release');
++  fs.mkdirSync(dest, { recursive: true });
++  if (!fs.existsSync(path.join(dest, path.basename(found)))) {
++    fs.copyFileSync(found, path.join(dest, path.basename(found)));
++  }
++}
++
++describe('TASK DEV-A-CLI-01: Ring CLI (evidence-only)', () => {
++  let root = '';
++  beforeEach(() => {
++    delete process.env[BASETEN_API_KEY_ENV];
++    root = makeTempRoot();
++    // Same engine fixture the Ring brain-lane tests use: without the release
++    // binary the audit chain cannot append and DOCX artifacts cannot build.
++    seedEngine(root);
++  });
++  afterEach(() => {
++    delete process.env[BASETEN_API_KEY_ENV];
++    try {
++      fs.rmSync(root, { recursive: true, force: true });
++    } catch {
++      /* best effort */
++    }
++  });
++
++  it('REPL: /help lists slash skills, evidence-only brief runs, approval defaults to No', async () => {
++    const input = new PassThrough();
++    const output = new PassThrough();
++    let transcript = '';
++    output.on('data', (chunk: Buffer) => {
++      transcript += chunk.toString('utf8');
++    });
++    const repl = runRingRepl({ projectRoot: root, input, output });
++    const readText = (): string => transcript;
++    await sendCommand(input, output, readText, '/help', '/handover');
++    expect(transcript).toContain('/rca');
++    expect(transcript).toContain('/permit');
++    expect(transcript).toContain('/loto');
++    expect(transcript).toContain('/sop');
++    expect(transcript).toContain('/report');
++    expect(transcript).toContain('/threads');
++    expect(transcript).toContain('/verify');
++    expect(transcript).toMatch(/EVIDENCE-ONLY/);
++
++    // Evidence-only brief: deterministic telemetry verdict, mode badge.
++    const briefAt = await sendCommand(input, output, readText, 'Give me the turbine vibration brief', 'CRITICAL');
++    expect(transcript.slice(briefAt)).toContain('2.637');
++    expect(transcript.slice(briefAt)).toContain('EVIDENCE-ONLY');
++
++    // Consequential ask pauses for approval; default answer (empty) = No.
++    const approvalAt = transcript.length;
++    input.write('Raise a work order for the turbine vibration\n');
++    await waitForText(output, readText, 'Approve \"', approvalAt);
++    expect(transcript.slice(approvalAt)).toMatch(/\[y\/N\]/);
++    // The approval prompt consumed the next line; answer empty (default No).
++    input.write('\n');
++    await waitForText(output, readText, 'Approval denied', approvalAt);
++    await waitForText(output, readText, 'ring> ', transcript.length);
++    const denied = transcript.slice(approvalAt);
++    expect(denied).toContain('was not performed');
++
++    // Audit recorded the prompt with the denial.
++    const chainPath = path.join(root, '.maos', 'audit', 'audit-chain.jsonl');
++    const chainLines = fs.readFileSync(chainPath, 'utf-8').trim().split('\n');
++    const lastRecord = JSON.parse(chainLines.pop() as string) as { data?: Record<string, unknown> };
++    const promptRecord = chainLines
++      .map((line) => JSON.parse(line) as { source?: unknown; data?: Record<string, unknown> })
++      .find((record) => record.data?.['event'] === 'RING_CLI_APPROVAL_PROMPT');
++    expect(promptRecord?.data?.['decision']).toBe('denied');
++    expect(promptRecord?.source).toBe('ring-cli');
++
++    input.write('exit\n');
++    await repl;
++  }, 60000);
++
++  it('REPL: /sop + /rca + restart refusal + /verify, all without hosted calls', async () => {
++    const services = makeServices(root);
++    const input = new PassThrough();
++    const output = new PassThrough();
++    let transcript = '';
++    output.on('data', (chunk: Buffer) => {
++      transcript += chunk.toString('utf8');
++    });
++    const repl = runRingRepl({ projectRoot: root, input, output });
++    const readText = (): string => transcript;
++    await sendCommand(input, output, readText, '/sop T-07', 'SOP');
++    // Skill-run transient: run.started fires before the workflow completes.
++    // The sop workflow needs no approval, so no approval prompt may appear.
++
++    await sendCommand(input, output, readText, '/rca turbine vibration', 'ROOT-CAUSE');
++
++    const refuseAt = await sendCommand(input, output, readText, 'Approve the turbine restart now', 'cannot approve');
++    expect(
++      isRingRefusalAnswer(transcript.slice(refuseAt)),
++    ).toBe(true);
++
++    await sendCommand(input, output, readText, '/verify', 'Audit chain: valid');
++
++    input.write('exit\n');
++    await repl;
++  }, 60000);
++
++  it('REPL: threads /new /threads /resume /role scoping + unknown command', async () => {
++    const input = new PassThrough();
++    const output = new PassThrough();
++    let transcript = '';
++    output.on('data', (chunk: Buffer) => {
++      transcript += chunk.toString('utf8');
++    });
++    const repl = runRingRepl({ projectRoot: root, input, output });
++    const readText = (): string => transcript;
++    await waitForText(output, readText, 'ring> ');
++
++    const newAt = await sendCommand(input, output, readText, '/new shift-brief safety', 'thread thread-');
++    const threadId = transcript.slice(newAt).match(/thread (thread-[0-9]+-[0-9a-f]{8})/)?.[1];
++    expect(threadId).toBeTruthy();
++
++    await sendCommand(input, output, readText, '/threads', threadId as string);
++
++    // /loto is not available to the manager role.
++    await sendCommand(input, output, readText, '/role manager', 'role manager');
++    await sendCommand(input, output, readText, '/loto', 'not available to role manager');
++
++    await sendCommand(input, output, readText, '/role safety', 'role safety');
++
++    await sendCommand(input, output, readText, `/resume ${threadId}`, `resumed ${threadId}`);
++
++    await sendCommand(input, output, readText, '/frobnicate', 'Unknown command');
++
++    input.write('exit\n');
++    await repl;
++  }, 60000);
++
++  it('REPL: approving with y writes the artifact with an absolute path', async () => {
++    const services = makeServices(root);
++    const input = new PassThrough();
++    const output = new PassThrough();
++    let transcript = '';
++    output.on('data', (chunk: Buffer) => {
++      transcript += chunk.toString('utf8');
++    });
++    const repl = runRingRepl({
++      projectRoot: root,
++      input,
++      output,
++      services,
++      approvalAnswers: ['y'],
++    });
++    const readText = (): string => transcript;
++    await waitForText(output, readText, 'ring> ');
++    const at = await sendCommand(input, output, readText, '/report turbine vibration', 'artifact: ');
++    const absMatch = transcript.slice(at).match(/artifact: ([^\r\n]+)/)?.[1];
++    expect(absMatch).toBeTruthy();
++    expect(path.isAbsolute((absMatch as string).trim())).toBe(true);
++    input.write('exit\n');
++    await repl;
++  }, 60000);
++
++  it('headless: --json prints wire events as JSONL and completes evidence-only (exit 0)', async () => {
++    const services = makeServices(root);
++    const output = new PassThrough();
++    let text = '';
++    output.on('data', (chunk: Buffer) => {
++      text += chunk.toString('utf8');
++    });
++    const result = await runRingHeadless({
++      projectRoot: root,
++      instruction: 'Give me the turbine vibration brief',
++      json: true,
++      services,
++      output,
++    });
++    expect(result.exitCode).toBe(RING_CLI_EXIT.COMPLETED);
++    const lines = text.split('\n').filter(Boolean);
++    expect(lines.length).toBeGreaterThan(2);
++    for (const line of lines) {
++      expect(() => JSON.parse(line)).not.toThrow();
++    }
++    const types = lines.map((l) => (JSON.parse(l) as { type: string }).type);
++    expect(types).toContain('run.started');
++    expect(types).toContain('tool.call');
++    expect(types).toContain('tool.result');
++    expect(types).toContain('run.completed');
++  }, 60000);
++
++  it('headless: consequential ask ends awaiting_approval with exit 3 and never auto-approves', async () => {
++    const services = makeServices(root);
++    const output = new PassThrough();
++    let text = '';
++    output.on('data', (chunk: Buffer) => {
++      text += chunk.toString('utf8');
++    });
++    const result = await runRingHeadless({
++      projectRoot: root,
++      instruction: 'Raise a work order for the turbine vibration',
++      services,
++      output,
++    });
++    expect(result.exitCode).toBe(RING_CLI_EXIT.AWAITING_APPROVAL);
++    expect(text).toContain('awaiting approval');
++    expect(text).toMatch(/maos-industrial ring --resume ring-/);
++    // Nothing was written before approval.
++    const artifactsDir = path.join(root, '.maos', 'ring-runs', 'artifacts');
++    expect(fs.existsSync(artifactsDir) ? fs.readdirSync(artifactsDir).length : 0).toBe(0);
++  }, 60000);
++
++  it('headless: --yes-to rejects anything but none; resume hint polls a pending run', async () => {
++    const services = makeServices(root);
++    await expect(
++      runRingHeadless({
++        projectRoot: root,
++        instruction: 'Raise a work order',
++        yesTo: 'all',
++        services,
++        output: new PassThrough(),
++      }),
++    ).rejects.toThrow('--yes-to none');
++
++    const output = new PassThrough();
++    let text = '';
++    output.on('data', (chunk: Buffer) => {
++      text += chunk.toString('utf8');
++    });
++    const first = await runRingHeadless({
++      projectRoot: root,
++      instruction: 'Raise a work order for the turbine vibration',
++      services,
++      output,
++    });
++    expect(first.exitCode).toBe(RING_CLI_EXIT.AWAITING_APPROVAL);
++    const runId = first.runId;
++    expect(runId).toBeTruthy();
++    const pollOut = new PassThrough();
++    let pollText = '';
++    pollOut.on('data', (chunk: Buffer) => {
++      pollText += chunk.toString('utf8');
++    });
++    const second = await runRingHeadless({
++      projectRoot: root,
++      resumeRunId: runId,
++      services,
++      output: pollOut,
++    });
++    expect(second.exitCode).toBe(RING_CLI_EXIT.AWAITING_APPROVAL);
++    expect(pollText).toMatch(/maos-industrial ring --resume/);
++  }, 60000);
++
++  it('headless: refusal maps to exit 2 and thread scoping works', async () => {
++    const services = makeServices(root);
++    const output = new PassThrough();
++    let text = '';
++    output.on('data', (chunk: Buffer) => {
++      text += chunk.toString('utf8');
++    });
++    const refused = await runRingHeadless({
++      projectRoot: root,
++      instruction: 'Approve the turbine restart now',
++      services,
++      output,
++    });
++    expect(refused.exitCode).toBe(RING_CLI_EXIT.REFUSED_OR_CANCELLED);
++    expect(text).toMatch(/cannot approve/i);
++
++    const thread = services.ringThread.createThread('cli-thread', 'operator');
++    const out2 = new PassThrough();
++    let text2 = '';
++    out2.on('data', (chunk: Buffer) => {
++      text2 += chunk.toString('utf8');
++    });
++    const threaded = await runRingHeadless({
++      projectRoot: root,
++      instruction: 'Summarize the turbine verdict',
++      thread: thread.threadId,
++      services,
++      output: out2,
++    });
++    expect(threaded.exitCode).toBe(RING_CLI_EXIT.COMPLETED);
++    expect(services.ringThread.getThread(thread.threadId)?.runs.length).toBe(1);
++    expect(text2).toContain('CRITICAL');
++    await expect(
++      runRingHeadless({
++        projectRoot: root,
++        instruction: 'hi',
++        thread: 'thread-123-nope',
++        services,
++        output: new PassThrough(),
++      }),
++    ).rejects.toThrow('was not found');
++  }, 60000);
++
++  it('control characters are stripped from rendered output', () => {
++    // Same C0 + DEL guard as the bounded industrial REPL: ESC, BEL, DEL and
++    // other C0 controls become spaces so model output cannot inject terminal
++    // control sequences.
++    expect(safeTerminalText('a\x1bb\x07c\x7fd')).toBe('a b c d');
++    // Raw ESC must never survive into approval prompts or answers.
++    expect(safeTerminalText('\x1b[2J\x1b[1;1H')).not.toContain('\x1b');
++  });
++
++  it('mocked hosted streaming: deltas arrive live, labelled fallback when silent', async () => {
++    // Live deltas: streamed text prints as it arrives (no label).
++    const streamed = makeServices(root, streamingMockProvider(['Turbine ', 'T-07 CRITICAL.'], 'Turbine T-07 CRITICAL.'));
++    const input = new PassThrough();
++    const output = new PassThrough();
++    let transcript = '';
++    output.on('data', (chunk: Buffer) => {
++      transcript += chunk.toString('utf8');
++    });
++    const repl = runRingRepl({ projectRoot: root, input, output, services: streamed });
++    const readText = (): string => transcript;
++    await waitForText(output, readText, 'ring> ');
++    const at = await sendCommand(input, output, readText, 'Turbine status?', 'T-07 CRITICAL');
++    expect(transcript.slice(at)).not.toContain('provider does not stream');
++    input.write('exit\n');
++    await repl;
++
++    // Silent provider: whole text prints once, labelled.
++    const silentRoot = makeTempRoot();
++    try {
++      const silent = makeServices(silentRoot, hostedMockProvider());
++      const input2 = new PassThrough();
++      const output2 = new PassThrough();
++      let transcript2 = '';
++      output2.on('data', (chunk: Buffer) => {
++        transcript2 += chunk.toString('utf8');
++      });
++      const repl2 = runRingRepl({ projectRoot: silentRoot, input: input2, output: output2, services: silent });
++      const readText2 = (): string => transcript2;
++      await waitForText(output2, readText2, 'ring> ');
++      await sendCommand(input2, output2, readText2, 'Turbine status?', 'provider does not stream');
++      input2.write('exit\n');
++      await repl2;
++    } finally {
++      fs.rmSync(silentRoot, { recursive: true, force: true });
++    }
++  }, 60000);
++});
+-- 
+2.53.0.windows.1
+
