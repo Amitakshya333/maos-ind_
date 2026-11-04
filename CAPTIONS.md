@@ -61,3 +61,14 @@ These four shots come from the **real Electron desktop app**, driven by Playwrig
 | `07-gui-approval.png` | `/handover` → APPROVAL REQUIRED card for `write_shift_handover`, Allow / Deny | `5e34ef8d182ede809e11bc75e1e2549063cda39081004b8a01a284bbc6b7b206` | 31762 |
 | `08-gui-artifacts.png` | After Allow: `write_shift_handover` ran, DOCX + Markdown artifacts with sizes and hashes | `ecce3f8fed4ec517c540afcd1813f4e6c01a25f6eff38441621ad96290c15af2` | 53929 |
 | `09-gui-refusal.png` | "Approve the restart of turbine T-07" → refused; no action, no files | `92c200d39758a57f0905db1297455cc0fe72edd127a40e55243fc0f06cd88525` | 38519 |
+
+## MAOS Industrial cockpit screenshots (from maos.web.app/indus)
+
+Downloaded unchanged from `https://maos.web.app/screenshots/` on 2026-11-04. They show the pre-existing MAOS Industrial cockpit (pinned base), captured 2026-11-01 on synthetic data.
+
+| File | Website source | SHA-256 |
+|---|---|---|
+| `10-core-cockpit.png` | `a-cockpit-session-root.png` | `b4ed46f219e393d245c541a913abbe728a7824aa09b494bd4f8cb98d1cd09ab6` |
+| `11-core-csv-critical.png` | `d-file-analysis-csv.png` | `db538246b9ecd0cdfee0a19e2f0c353d329340f3e07704f943d532e43eb38584` |
+| `12-core-bundled-sample.png` | `c-synthetic-t07-sample.png` | `71edbd0372d6d5e8289720623aba054407d44db01524118a0bab18af6d150885` |
+| `13-core-approvals.png` | `f-approvals-queue.png` | `461a29d9ac8a150d5eddb9559a52ad7550cf65c6d2e270ddcd6eeeaa4c2cc8ce` |
