@@ -1,8 +1,8 @@
 <div align="center">
 
-# MAOS Industrial
+<img src="docs/banner.svg" alt="MAOS Industrial: Evidence-first operations software for the plant floor" width="900"/>
 
-### Evidence-first operations software for the plant floor. Now with **Ring**: the industrial agent that knows what it must never do.
+### Now with **Ring**: the industrial agent that knows what it must never do.
 
 **MAOS Industrial** is the product: an offline-first desktop and terminal workspace that turns plant telemetry, SOPs and inspection reports into cited, auditable decisions.<br/>**Ring** is the feature we built for this hackathon: an agent that plans, uses tools, reads the plant's own evidence,<br/>writes the work order **after a human says yes**, and refuses to authorize a restart. Ever.
 
