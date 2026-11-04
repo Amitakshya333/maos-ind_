@@ -1,16 +1,66 @@
-graph TD
-    Employee[Employee - plain-language question] --> RingCLI[Ring CLI and TUI - REPL by default, headless with -p, home screen]
-    Employee --> RingGUI[Ring GUI overlay - Ctrl Shift Space, Allow Deny cards]
-    RingCLI --> AgentLoop[Ring agent loop - threads, skills, registry, approvals]
-    RingGUI --> AgentLoop
-    AgentLoop --> MetaModel[Meta model via Baseten - Muse Spark Open reasoning]
-    AgentLoop --> DetEngine[Deterministic engine - telemetry verdict, audit chain, artifacts]
-    MetaModel --> EvidenceTools[Evidence tools - analyze_telemetry, read_company_document, search_knowledge, verify_export]
-    EvidenceTools --> Findings[Findings - never verdicts]
-    Findings --> DetEngine
-    DetEngine --> ApprovalGate[Approvals gate - human y N, default No, fail-closed]
-    ApprovalGate --> ArtifactsOK[Artifacts - DOCX and MD work orders, audit export]
-    ApprovalGate --> RefusalPath[Refusal path - restart and operation requests]
-    RefusalPath --> CalmRefusal[Calm refusal - decision support only, no files written]
-    DetEngine --> AuditTrail[Tamper-evident audit - every event in maos ring-runs]
-    AuditTrail --> ArtifactsOK
+flowchart TB
+    subgraph SURF["Surfaces · built this week"]
+        CLI["Terminal agent<br/>maos-industrial ring<br/>REPL · headless -p --json · exit codes 0/1/2/3<br/><i>ring-cli.ts</i>"]
+        TUI["Industrial TUI home<br/><i>industrial-tui.ts</i>"]
+        GUI["Desktop app · Electron<br/>Ring Workspace + Ctrl+Shift+Space overlay<br/><i>RingWorkspace.tsx · RingOverlay.tsx · ring-overlay-host.cjs</i>"]
+    end
+
+    API["Loopback REST API · 127.0.0.1 only<br/>/api/v1/ring/threads · /runs · /approvals<br/><i>router.ts</i>"]
+
+    subgraph RT["Ring runtime · built this week"]
+        AGENT["Agent loop<br/>threads · streaming run events · max turns · cancel<br/><i>ring-agent-service.ts · ring-thread-service.ts</i>"]
+        SAFE["Safety layer<br/>restart refusal · prompt-injection guard · raw-row stripping<br/><i>ring-safety.ts</i>"]
+        HYB{"Hybrid router"}
+        SKILLS["6 deterministic skills<br/>handover · rca · permit · loto · sop · report<br/><i>ring-skill-workflows.ts</i>"]
+        REG{"Tool registry<br/>isConsequential()<br/><i>ring-tool-registry.ts</i>"}
+    end
+
+    subgraph TOOLS["15 tools · src/service/ring-tools"]
+        EV["Evidence · run freely<br/>analyze_telemetry · read_company_document · search_knowledge<br/>ocr_document · inspect_image · verify_export"]
+        BK["Bookkeeping · run freely<br/>update_plan · remember · recall"]
+        CQ["Consequential · human y/N, default No<br/>create_work_order · write_shift_handover · generate_report_docx<br/>generate_spreadsheet_xlsx · draft_safety_note · request_approval"]
+    end
+
+    subgraph META["Meta model · hosted mode only"]
+        POL["Policy lock: one endpoint, one model<br/><i>meta-api-policy.ts</i>"]
+        MUSE["Muse Spark Open<br/>meta-models/muse-spark-open-1026<br/>Baseten · OpenAI-compatible API"]
+    end
+
+    subgraph CORE["MAOS Core · pre-existing, pinned at f952505"]
+        TEL["Deterministic telemetry analysis"]
+        OFF["DOCX / XLSX generators · OCR · memory · knowledge base"]
+        AUD["Audit chain · Rust maos-engine"]
+    end
+
+    STORE[(".maos/ring-runs<br/>threads · transcripts · artifacts")]
+    HUMAN(("Authorized<br/>engineer"))
+
+    CLI -->|in-process| AGENT
+    TUI --> CLI
+    GUI -->|session token via private IPC| API --> AGENT
+    AGENT --> SAFE
+    SAFE -->|"restart / operate request"| REFUSE["Refused · exit code 2<br/>no action, no files"]
+    AGENT --> HYB
+    HYB -->|"plan + evidence choice"| POL --> MUSE
+    MUSE -->|tool calls| REG
+    HYB -->|"bookkeeping, or no API key"| SKILLS --> REG
+    REG --> EV & BK
+    REG -->|pauses run| HUMAN -->|"y"| CQ
+    EV --> TEL & AUD
+    CQ --> OFF
+    AGENT --> STORE
+    AGENT --> AUD
+
+    LEAVES["Leaves the machine in hosted mode:<br/>the instruction, deterministic summaries and cited document text.<br/>Never raw CSV rows, generated files or the audit log."]
+    LEAVES -.- MUSE
+
+    classDef new fill:#0f2a1d,stroke:#10b981,color:#e5e7eb
+    classDef base fill:#1f2937,stroke:#6b7280,color:#d1d5db
+    classDef meta fill:#0b2447,stroke:#3b82f6,color:#e5e7eb
+    classDef gate fill:#3a2a06,stroke:#f59e0b,color:#fde68a
+    classDef stop fill:#3b0d0d,stroke:#ef4444,color:#fecaca
+    class CLI,TUI,GUI,AGENT,SAFE,SKILLS,EV,BK,CQ new
+    class TEL,OFF,AUD,API base
+    class POL,MUSE meta
+    class REG,HUMAN,HYB gate
+    class REFUSE stop

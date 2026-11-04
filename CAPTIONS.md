@@ -8,7 +8,7 @@ Rendering: each PNG was produced by piping the REAL stdout of a REAL command run
 ## Shots
 
 ### 1. `shots/01-cli-home.png` (891x876, sha256 `2cb9cbace45a2e062f4524d35ddcda9998a93cc4c0b7faaad2d1e3a386d9fe7c`)
-What it shows: the CLI home TUI — CEO ASCII banner (byte-identical), `MAOS Industrial · v0.4.0` nameplate, `Your plant. Your data. Your rules.` tagline, the operator input card (amber accent, `Ask your plant anything...` + ghost suggestions including the T-07 question, `Operator · evidence-only · T-07` badge), and the SYSTEMS panel (`ENGINE HEALTHY`, `BOUNDARY NOT CHECKED IN THIS SESSION`, `AUDIT NOT CHECKED IN THIS SESSION`, `T-07 CRITICAL RMS 2.637`, `Mode: EVIDENCE-ONLY`). Layout is centered: at 100 cols the stage is `clamp(round(0.9*100),40,100)=90` cols centered with 5-col margins (see `stageWidth` in `src/industrial/industrial-tui.ts`).
+What it shows: the CLI home TUI — the INDUS ASCII banner, `MAOS Industrial · v0.4.0` nameplate, `Your plant. Your data. Your rules.` tagline, the operator input card (amber accent, `Ask your plant anything...` + ghost suggestions including the T-07 question, `Operator · evidence-only · T-07` badge), and the SYSTEMS panel (`ENGINE HEALTHY`, `BOUNDARY NOT CHECKED IN THIS SESSION`, `AUDIT NOT CHECKED IN THIS SESSION`, `T-07 CRITICAL RMS 2.637`, `Mode: EVIDENCE-ONLY`). Layout is centered: at 100 cols the stage is `clamp(round(0.9*100),40,100)=90` cols centered with 5-col margins (see `stageWidth` in `src/industrial/industrial-tui.ts`).
 Command (exit 0): `node dist/cli/index.js industrial` with `COLUMNS=100`, run from the scratch root.
 Evidence-only noted: yes — SYSTEMS panel reads `Mode: EVIDENCE-ONLY`, badge reads `evidence-only`.
 
@@ -44,3 +44,20 @@ Evidence-only noted: yes — the overlay empty state carries the evidence-only b
 
 ## GUI overlay: CAPTURED (not NOT-CAPTURED)
 Headless Electron rendered offscreen on this machine (Windows, no display server): one 800x600 display enumerated, `--headless` + offscreen `BrowserWindow` paints and `capturePage()` returns real product pixels. NOT-CAPTURED does not apply.
+
+## Desktop app captures (06–09), added 2026-11-04
+
+These four shots come from the **real Electron desktop app**, driven by Playwright. They are not mock-ups.
+
+- **Build:** a clean checkout of base `f9525055c56a7f7771dd2fa029c147c2960a98a3` with all 33 `patches/` applied by `git am`. The resulting files are identical to freeze commit `82b37fe` across `src/ tests/ desktop/ scripts/ demo/`. Then `npm ci`, `npm run build`, `npm ci --prefix desktop`, and `node desktop/node_modules/electron/install.js` (Electron 45.0.0).
+- **Project:** created with `maos-industrial ring --demo` (the 9-file synthetic demo pack, no API keys).
+- **Launch:** `desktop/main.cjs --project-root <demo>` through Playwright's `_electron.launch`, the same path as `tests/release/desktop-browser-rehearsal.cjs`. `BASETEN_API_KEY` unset, so every shot is **evidence-only** and the screen says so.
+- **Actions:** typed into the Ring instruction box and clicked Send; for the handover, clicked **Allow** on the approval card. The script is [`docs/screenshots/capture-gui.cjs`](docs/screenshots/capture-gui.cjs); its folder paths are from the capture machine.
+- **Editing:** each PNG is the Ring workspace element, cropped to the conversation panel to remove empty space. Nothing was drawn or retouched.
+
+| File | Shows | SHA-256 | Bytes |
+|---|---|---|---|
+| `06-gui-turbine.png` | "Check T-07 vibration…" → CRITICAL · RMS 2.637 mm/s, evidence source, `analyze_telemetry` chip | `db50f381bd4c6bdaf3d5d4d1f6867ed56370279e713beecc4ac802f3aa563172` | 35738 |
+| `07-gui-approval.png` | `/handover` → APPROVAL REQUIRED card for `write_shift_handover`, Allow / Deny | `5e34ef8d182ede809e11bc75e1e2549063cda39081004b8a01a284bbc6b7b206` | 31762 |
+| `08-gui-artifacts.png` | After Allow: `write_shift_handover` ran, DOCX + Markdown artifacts with sizes and hashes | `ecce3f8fed4ec517c540afcd1813f4e6c01a25f6eff38441621ad96290c15af2` | 53929 |
+| `09-gui-refusal.png` | "Approve the restart of turbine T-07" → refused; no action, no files | `92c200d39758a57f0905db1297455cc0fe72edd127a40e55243fc0f06cd88525` | 38519 |

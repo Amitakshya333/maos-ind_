@@ -1,121 +1,273 @@
-# MAOS Ring: an on-premise industrial agent powered by Meta's Muse Spark Open (via Baseten). Claude Code for the plant floor.
+<div align="center">
 
-## Demo video
+# MAOS Ring
 
-[Demo video — link to be added]
+### The industrial agent that knows what it must never do.
+
+An agent for the people who keep turbines turning. It plans, uses tools, reads the plant's own evidence,<br/>writes the work order **after a human says yes**, and refuses to authorize a restart. Ever.
+
+**Reasoning by Meta's Muse Spark Open** (`meta-models/muse-spark-open-1026`, via Baseten) · **Terminal + desktop** · **Linux + Windows**
+
+[![Release](https://img.shields.io/github/v/release/Amitakshya333/maos-ind_?label=release)](https://github.com/Amitakshya333/maos-ind_/releases/tag/v0.4.0)
+![Meta model](https://img.shields.io/badge/model-Muse%20Spark%20Open-0866FF)
+![Ring tests](https://img.shields.io/badge/Ring%20tests-167%20passing-10b981)
+![Data](https://img.shields.io/badge/data-synthetic%20only-f59e0b)
+![License](https://img.shields.io/badge/license-MIT-blue)
+
+**▶ 3-minute demo video:** _link added at submission_
+
+<img src="docs/screenshots/07-gui-approval.png" alt="Ring pauses for human approval before writing a shift handover" width="760"/>
+
+<sub>Real capture of the desktop app. Ring found the CRITICAL reading, then stopped and asked before writing anything.</sub>
+
+</div>
+
+---
+
+## Judges: 60-second tour
+
+1. **The idea.** Developers got coding agents. Plant engineers got a CSV, a scanned PDF and eight minutes before handover. Ring is a coding-agent-style assistant for them, with the safety rules a plant needs built into the runtime, not the prompt.
+2. **The proof it works.** The screenshots below are real runs of the shipped code. The setup script rebuilds it from a pinned base plus 33 patches, and was tested on a fresh Debian 13 VM and a fresh Windows 11 account.
+3. **The Meta part.** Muse Spark Open does the planning and chooses the evidence. A deterministic engine does the maths, keeps the records, and holds the approval gate. [How we used Meta's model ↓](#how-ring-uses-metas-muse-spark-open)
+4. **The code.** Every file written this week is in [`source/`](source/). [Start with the agent loop.](source/src/service/ring-agent-service.ts)
+5. **Eligibility.** This repo holds only event-period work (Oct 28 – Nov 4, 2026). Pre-existing code is a pinned dependency. [Details ↓](#what-existed-before-vs-what-we-built-this-week)
+
+---
+
+## The problem
+
+On a turbine, **the average can be green while the decision isn't.** In our demo data, 500 vibration readings average **2.637 mm/s**, comfortably normal. But four individual readings cross the demonstration limits, and one of them (row 367, **8.3 mm/s**) is past the critical line. A tired engineer skimming a dashboard at 05:52 misses it.
+
+The tools that would catch it, agents that read files, run analysis and draft documents, were built for developers. Plants also need something developers don't: **a hard line between helping a human decide and deciding for them.** Ring is built around that line.
+
+## What Ring does
+
+| | |
+|---|---|
+| **Finds what the average hides** | Deterministic telemetry analysis cites exact rows, values and limits. The verdict comes first. |
+| **Reads the plant's own documents** | SOPs, maintenance notes and inspection reports from the project's evidence folder, cited by source. |
+| **Does real work** | Drafts work orders and shift handovers as real DOCX and Markdown files, each with a SHA-256. |
+| **Asks before it writes** | Every file-writing tool pauses the run for a human `y/N`. The default is **No**. |
+| **Refuses to operate the plant** | "Approve the restart" is refused in every mode. Headless runs exit with code **2**. |
+| **Remembers the conversation** | Multi-turn threads, persisted to disk, so follow-ups like "shorter, for the day supervisor" work. |
+| **Proves what it did** | Every step and every refusal is written to a tamper-evident audit chain. `/verify` checks it. |
+| **Meets workers where they are** | A terminal agent for Linux boxes over SSH, plus a desktop overlay on `Ctrl+Shift+Space`. |
+| **Speaks shop-floor** | Six shift skills: `/handover` `/rca` `/permit` `/loto` `/sop` `/report`. |
 
 ## Screenshots
 
-![Ring CLI home TUI at 100 cols](docs/screenshots/01-cli-home.png)
-Home TUI (real run, evidence-only): CEO banner, operator input card, SYSTEMS panel with T-07 CRITICAL RMS 2.637 — centered 90-col stage at 100 cols.
+All real runs of this code, in evidence-only mode (no API key), using bundled synthetic data. Capture method and checksums are in [`CAPTIONS.md`](CAPTIONS.md).
 
-![Ring answering the turbine question](docs/screenshots/02-ring-turbine.png)
-Ring mode answering the turbine question (real run, evidence-only): `analyze_telemetry` tool chips, CRITICAL verdict line, RMS 2.637, cited CSV source.
+**Desktop app**
 
-![Ring approval card](docs/screenshots/03-approval-card.png)
-Approval card (real run): `/handover` pauses on the bordered approval card with the `Approve ... ? [y/N]` prompt (default No) — answered N here.
+| Turbine check: CRITICAL, with the evidence | Approved: real files, with hashes |
+|---|---|
+| <img src="docs/screenshots/06-gui-turbine.png" width="420"/> | <img src="docs/screenshots/08-gui-artifacts.png" width="420"/> |
+| **Restart request: refused** | **Overlay (`Ctrl+Shift+Space`), empty state** |
+| <img src="docs/screenshots/09-gui-refusal.png" width="420"/> | <img src="docs/screenshots/05-gui-overlay.png" width="300"/> |
 
-![Ring refusal](docs/screenshots/04-refusal.png)
-Refusal in the terminal (real run): a restart request gets the calm fail-closed refusal — no action, no files, headless exit code 2.
+**Terminal**
 
-![Ring overlay](docs/screenshots/05-gui-overlay.png)
-GUI overlay, `#/ring-overlay` (real headless Electron offscreen capture): the compact always-on-top companion over the same store, empty state with no run attached. No approval card is visible because no live run was attached offscreen — not faked. See `CAPTIONS.md` for the capture log.
+<img src="docs/screenshots/01-cli-home.png" width="560"/>
 
-Screenshot provenance (commands, exit codes, SHAs): [`CAPTIONS.md`](CAPTIONS.md). Architecture source: [`ARCHITECTURE.mmd`](ARCHITECTURE.mmd).
+| `-p` turbine check | `/handover` approval prompt (answered N) | Refusal, exit code 2 |
+|---|---|---|
+| <img src="docs/screenshots/02-ring-turbine.png" width="300"/> | <img src="docs/screenshots/03-approval-card.png" width="300"/> | <img src="docs/screenshots/04-refusal.png" width="300"/> |
 
-## How it fits together
+## How Ring uses Meta's Muse Spark Open
+
+Ring calls `meta-models/muse-spark-open-1026` through Baseten's OpenAI-compatible endpoint (`https://inference.baseten.co/v1`). [`meta-api-policy.ts`](source/src/backends/meta-api-policy.ts) locks the endpoint and model: Ring refuses to arm hosted mode with any other combination. The API key is read from the shell environment and never written to a file.
+
+**What the model does:** it plans the run and chooses which evidence tools to call: telemetry analysis, documents, knowledge search, audit verification. That's the part that needs judgement: *which evidence answers this question?*
+
+**What the model never does:** the maths, the records, or the approval. Numbers come from deterministic analysis. File-writing tools are gated by the [tool registry](source/src/service/ring-tool-registry.ts), not by the prompt, so even a model that never asks for permission is stopped. Restart and operation requests are refused by a pre-check in the [agent loop](source/src/service/ring-agent-service.ts) before any tool or model call, in every mode. The [safety layer](source/src/service/ring-safety.ts) adds the prompt-injection guard and raw-row stripping.
+
+**Why that split:** we measured it. In live hosted runs, Muse Spark chose the right evidence tools **3 out of 3** times, but missed a memory-and-plan bookkeeping step in 1 of 4 runs, consistently. So the model investigates, and the engine keeps the books ("hybrid routing" in [`ring-agent-service.ts`](source/src/service/ring-agent-service.ts)). The reliability harness is [`ring-tool-reliability-check.mjs`](source/scripts/ring-tool-reliability-check.mjs).
+
+**What leaves the machine:** in hosted mode, the model receives the instruction, deterministic summaries, and the text of any documents it reads from the evidence folder. Telemetry reaches the model only as a deterministic summary: the document tool refuses to return raw CSV and points the model to `analyze_telemetry` instead. Generated files and the audit log stay local. Without a key, Ring runs **evidence-only**: the same tools and the same gates, no model calls, and it says so on screen.
+
+## Architecture
 
 ```mermaid
-graph TD
-    Employee[Employee - plain-language question] --> RingCLI[Ring CLI and TUI - REPL by default, headless with -p, home screen]
-    Employee --> RingGUI[Ring GUI overlay - Ctrl Shift Space, Allow Deny cards]
-    RingCLI --> AgentLoop[Ring agent loop - threads, skills, registry, approvals]
-    RingGUI --> AgentLoop
-    AgentLoop --> MetaModel[Meta model via Baseten - Muse Spark Open reasoning]
-    AgentLoop --> DetEngine[Deterministic engine - telemetry verdict, audit chain, artifacts]
-    MetaModel --> EvidenceTools[Evidence tools - analyze_telemetry, read_company_document, search_knowledge, verify_export]
-    EvidenceTools --> Findings[Findings - never verdicts]
-    Findings --> DetEngine
-    DetEngine --> ApprovalGate[Approvals gate - human y N, default No, fail-closed]
-    ApprovalGate --> ArtifactsOK[Artifacts - DOCX and MD work orders, audit export]
-    ApprovalGate --> RefusalPath[Refusal path - restart and operation requests]
-    RefusalPath --> CalmRefusal[Calm refusal - decision support only, no files written]
-    DetEngine --> AuditTrail[Tamper-evident audit - every event in maos ring-runs]
-    AuditTrail --> ArtifactsOK
+flowchart TB
+    subgraph SURF["Surfaces · built this week"]
+        CLI["Terminal agent<br/>maos-industrial ring<br/>REPL · headless -p --json · exit codes 0/1/2/3<br/><i>ring-cli.ts</i>"]
+        TUI["Industrial TUI home<br/><i>industrial-tui.ts</i>"]
+        GUI["Desktop app · Electron<br/>Ring Workspace + Ctrl+Shift+Space overlay<br/><i>RingWorkspace.tsx · RingOverlay.tsx · ring-overlay-host.cjs</i>"]
+    end
+
+    API["Loopback REST API · 127.0.0.1 only<br/>/api/v1/ring/threads · /runs · /approvals<br/><i>router.ts</i>"]
+
+    subgraph RT["Ring runtime · built this week"]
+        AGENT["Agent loop<br/>threads · streaming run events · max turns · cancel<br/><i>ring-agent-service.ts · ring-thread-service.ts</i>"]
+        SAFE["Safety layer<br/>restart refusal · prompt-injection guard · raw-row stripping<br/><i>ring-safety.ts</i>"]
+        HYB{"Hybrid router"}
+        SKILLS["6 deterministic skills<br/>handover · rca · permit · loto · sop · report<br/><i>ring-skill-workflows.ts</i>"]
+        REG{"Tool registry<br/>isConsequential()<br/><i>ring-tool-registry.ts</i>"}
+    end
+
+    subgraph TOOLS["15 tools · src/service/ring-tools"]
+        EV["Evidence · run freely<br/>analyze_telemetry · read_company_document · search_knowledge<br/>ocr_document · inspect_image · verify_export"]
+        BK["Bookkeeping · run freely<br/>update_plan · remember · recall"]
+        CQ["Consequential · human y/N, default No<br/>create_work_order · write_shift_handover · generate_report_docx<br/>generate_spreadsheet_xlsx · draft_safety_note · request_approval"]
+    end
+
+    subgraph META["Meta model · hosted mode only"]
+        POL["Policy lock: one endpoint, one model<br/><i>meta-api-policy.ts</i>"]
+        MUSE["Muse Spark Open<br/>meta-models/muse-spark-open-1026<br/>Baseten · OpenAI-compatible API"]
+    end
+
+    subgraph CORE["MAOS Core · pre-existing, pinned at f952505"]
+        TEL["Deterministic telemetry analysis"]
+        OFF["DOCX / XLSX generators · OCR · memory · knowledge base"]
+        AUD["Audit chain · Rust maos-engine"]
+    end
+
+    STORE[(".maos/ring-runs<br/>threads · transcripts · artifacts")]
+    HUMAN(("Authorized<br/>engineer"))
+
+    CLI -->|in-process| AGENT
+    TUI --> CLI
+    GUI -->|session token via private IPC| API --> AGENT
+    AGENT --> SAFE
+    SAFE -->|"restart / operate request"| REFUSE["Refused · exit code 2<br/>no action, no files"]
+    AGENT --> HYB
+    HYB -->|"plan + evidence choice"| POL --> MUSE
+    MUSE -->|tool calls| REG
+    HYB -->|"bookkeeping, or no API key"| SKILLS --> REG
+    REG --> EV & BK
+    REG -->|pauses run| HUMAN -->|"y"| CQ
+    EV --> TEL & AUD
+    CQ --> OFF
+    AGENT --> STORE
+    AGENT --> AUD
+
+    LEAVES["Leaves the machine in hosted mode:<br/>the instruction, deterministic summaries and cited document text.<br/>Never raw CSV rows, generated files or the audit log."]
+    LEAVES -.- MUSE
+
+    classDef new fill:#0f2a1d,stroke:#10b981,color:#e5e7eb
+    classDef base fill:#1f2937,stroke:#6b7280,color:#d1d5db
+    classDef meta fill:#0b2447,stroke:#3b82f6,color:#e5e7eb
+    classDef gate fill:#3a2a06,stroke:#f59e0b,color:#fde68a
+    classDef stop fill:#3b0d0d,stroke:#ef4444,color:#fecaca
+    class CLI,TUI,GUI,AGENT,SAFE,SKILLS,EV,BK,CQ new
+    class TEL,OFF,AUD,API base
+    class POL,MUSE meta
+    class REG,HUMAN,HYB gate
+    class REFUSE stop
 ```
 
-## What it does
+<sub>Green: built this week. Grey: pre-existing MAOS Core. Blue: Meta's model. Amber: where a human or a gate decides. Source: [`ARCHITECTURE.mmd`](ARCHITECTURE.mmd).</sub>
 
-- Ask in plain language; get deterministic verdicts with sources — turbine telemetry, SOP, maintenance note, audit chain.
-- Approval-gated work orders and artifacts; Ring calmly refuses operating decisions ("decision support, not operating authority").
-- Tamper-evident audit plus a reproducible setup: exact base SHA, 33 ordered patches, fail-closed scripts.
+## Try it
 
-## How it uses Meta's model
+You need **git**, **Node.js 22+** and **npm**. Leave `BASETEN_API_KEY` unset for the first run. Setup is evidence-only and refuses to run if a key is present.
 
-The hybrid is deliberate:
+### Option A: build from this repo (the path we verified on fresh machines)
 
-- The **model** plans and runs the EVIDENCE tools — telemetry (`analyze_telemetry`), SOP (`read_company_document`), search (`search_knowledge`), verify (`verify_export`) — proven 3/3 live.
-- The **engine** owns records, approvals, and refusal deterministically, server-side. The model never authorizes an operation.
-- The 3/4 live reliability finding — the memory-and-plan miss, stable across 3 runs — is what motivated the hybrid: the model proposes, the deterministic engine disposes.
+The setup script clones the public MAOS Core repo, checks out the exact pinned base, **verifies the SHA**, applies the 33 patches in order, then installs and builds. It stops at the first failure.
 
-Model id (byte-exact): `meta-models/muse-spark-open-1026` via `https://inference.baseten.co/v1`.
-
-## What existed before vs what we built this week
-
-**Before.** MAOS Core at `f9525055c56a7f7771dd2fa029c147c2960a98a3` (public maos.git): the multi-agent orchestrator — fleet config, provider backends, CLI/REPL, audit chain — plus the sovereign Industrial profile (deterministic T-07 judged run, Rust-backed audit, offline stores).
-
-**This week — Ring.** A deterministic, evidence-first agent loop (instruction in, plan + tool steps streamed as events, human approval on consequential actions, every event persisted to `.maos/ring-runs`); the `maos-industrial ring` CLI (REPL by default, headless with `-p`, `ring --demo` first-run pack); the Industrial TUI home screen with the same streaming feel; the Ring Workspace GUI plus overlay host with Allow/Deny cards over the same store; six frozen skills (handover, rca, permit, loto, sop, report) with prompt-injection guards; fail-closed safety throughout; the bundled synthetic T-07/P-12 demo pack; unsigned `electron-builder` packaging.
-
-Base pin only: `f9525055c56a7f7771dd2fa029c147c2960a98a3`. No other tags or SHAs apply.
-
-## Quickstart — Linux CLI
-
-Run from the packet directory (`setup.sh` performs the clone itself — exact base SHA, verified with `rev-parse`, fail closed):
-
+**Linux / macOS**
 ```bash
+git clone https://github.com/Amitakshya333/maos-ind_.git && cd maos-ind_
 bash scripts/setup.sh maos-submission
 cd maos-submission && maos-industrial ring --demo
 ```
 
-`setup.sh` applies the 33 patches in `patches/` in order (fail closed, `git am --abort` on failure), runs `npm ci` + `npm run build:backend`, best-effort `npm link`, then prints the next command. It refuses to run twice in the same dir. Expected: verdict CRITICAL, overall RMS 2.637, `EVIDENCE-ONLY` badge, exit 0.
-
-## Quickstart — Windows CLI
-
-Run from the packet directory:
-
+**Windows (PowerShell)**
 ```powershell
+git clone https://github.com/Amitakshya333/maos-ind_.git; cd maos-ind_
 powershell -ExecutionPolicy Bypass -File scripts\setup.ps1
 cd maos-submission; maos-industrial ring --demo
 ```
 
-Same behavior: exact base SHA, 33 patches in order, `npm ci` + `npm run build:backend`, best-effort `npm link`, CRITICAL / RMS 2.637 / `EVIDENCE-ONLY`, exit 0.
+`ring --demo` copies the synthetic demo pack to `~/maos-industrial-demo` and runs the turbine brief. **Expected:** verdict **CRITICAL**, overall RMS **2.637 mm/s**, the `EVIDENCE-ONLY` badge, exit code 0. Then talk to it:
 
-## Quickstart — Windows GUI (run from source, unsigned)
+```bash
+cd ~/maos-industrial-demo
+maos-industrial ring                                          # interactive: try /handover, then "approve the restart"
+maos-industrial ring -p "approve restart of the turbine"; echo $?   # prints the refusal, then 2
+```
 
-Run from the built tree root (`maos-submission` after setup):
+### Option B: install the release
+
+The [v0.4.0 release](https://github.com/Amitakshya333/maos-ind_/releases/tag/v0.4.0) has the CLI package, prebuilt engines for Linux (x86-64) and Windows, install scripts, and checksums. The installer runs a self-check that ends with the CRITICAL brief.
+
+```bash
+R=https://github.com/Amitakshya333/maos-ind_/releases/download/v0.4.0
+curl -fsSL $R/install-ring-release.sh -o install-ring-release.sh
+RELEASE_TARBALL_URL=$R/maosorch-0.4.0.tgz MAOS_ENGINE_URL=$R/maos-engine-linux bash install-ring-release.sh
+```
+```powershell
+$R = "https://github.com/Amitakshya333/maos-ind_/releases/download/v0.4.0"
+$env:RELEASE_TARBALL_URL = "$R/maosorch-0.4.0.tgz"; $env:MAOS_ENGINE_URL = "$R/maos-engine.exe"
+irm "$R/install-ring-release.ps1" | iex
+```
+
+### Desktop app (Windows, from the Option A build)
 
 ```powershell
+cd maos-submission
 npm ci --prefix desktop
 node desktop/node_modules/electron/install.js
 npm run build
+desktop\node_modules\electron\dist\electron.exe desktop\main.cjs --project-root "$HOME\maos-industrial-demo"
 ```
 
-Unsigned: no certificate, no publisher attestation — Windows SmartScreen will warn. The SHA-256 manifest detects tampering; it does not prove provenance.
+Open the chat view and ask *"Check T-07 vibration and tell me if it is safe to keep running"*. `Ctrl+Shift+Space` opens the overlay from any app. The release also has an **unsigned** Windows installer and portable `.exe` (SmartScreen will warn: *More info → Run anyway*). Check them against `SHA256SUMS-gui-0.3.0.txt`. Their internal version reads 0.3.0.
 
-## Turning on hosted mode AFTER setup
+### Turn on Meta's model (hosted mode)
 
-1. Set `BASETEN_API_KEY` in the launching shell only — `export BASETEN_API_KEY="<key>"` (PowerShell: `$env:BASETEN_API_KEY="<key>"`); never committed, never in a file.
-2. Add the `providers.baseten` block to the demo `.maos/maos.config.json` (`baseURL: https://inference.baseten.co/v1`, `model: meta-models/muse-spark-open-1026`, `basetenApiEnabled: true`) — armed at recording time only.
-3. Badge check: the CLI/TUI must show `HOSTED`, not EVIDENCE-ONLY — evidence-only is the default.
+1. In the shell that launches Ring: `export BASETEN_API_KEY="<key>"` (PowerShell: `$env:BASETEN_API_KEY="<key>"`). Never put it in a file.
+2. In the demo project's `.maos/maos.config.json`, add a `providers.baseten` block with `baseURL: "https://inference.baseten.co/v1"`, `model: "meta-models/muse-spark-open-1026"`, `basetenApiEnabled: true`.
+3. Restart Ring. The mode badge must read **HOSTED**: in the terminal header, and in the desktop app as `HOSTED · meta-models/muse-spark-open-1026 via Baseten`. If it says EVIDENCE-ONLY, hosted mode isn't armed.
+
+## What existed before vs what we built this week
+
+Meta's rules ask for a fresh repo with only event-period work, and the pre-existing base as a pinned dependency. That's how this repo is laid out.
+
+| | Before the event | Built Oct 28 – Nov 4, 2026 |
+|---|---|---|
+| **What** | MAOS Core: multi-agent orchestrator, provider backends, CLI/REPL, audit chain, and the Industrial profile (deterministic T-07 analysis, Rust audit engine, offline stores) | **Ring**: the agent loop and threads, hybrid routing with Muse Spark Open, 15 tools behind an approval registry, the safety layer, 6 shift skills, the terminal agent and TUI, the desktop workspace and overlay, the P-12 demo pack, release packaging |
+| **Where** | Public repo [`maos`](https://github.com/Amitakshya333/maos), pinned at `f9525055c56a7f7771dd2fa029c147c2960a98a3` (Sep 29, 2026) | [`patches/`](patches/): 33 commits. [`source/`](source/): 119 new files. [`CHANGED_FILES.md`](CHANGED_FILES.md): 104 modified files (+7,672 / −2,588) |
+| **Size** | n/a | About 13,100 lines of new TypeScript/JavaScript and 15,200 lines of new tests |
+
+There are no commits in the base between Sep 29 and Oct 28, so nothing pre-event is counted as event work. Commit dates, the generation command and byte counts are in [`PATCHES.md`](PATCHES.md).
+
+## How we know it works
+
+| Check | Result |
+|---|---|
+| The 33 patches on the pinned base reproduce the freeze commit `82b37fe` | **Identical**: zero diff across `src/ tests/ desktop/ scripts/ demo/`. All 119 files in `source/` pass `sha256sum -c` against the built tree. |
+| Fresh-machine setup, README commands only | **Passed** on a Debian 13 VM and a fresh Windows 11 user account (2026-11-04) |
+| Ring test suites (`npx vitest run tests/industrial/ring-* tests/gui/ring-*`) | **167 passing, 8 skipped** on a clean checkout. One P-12 test assumes no engine binary is installed and fails if one is; that's a test-design issue, not a product bug. |
+| Desktop app, end to end | Turbine check, approval, artifacts and refusal all captured from the real Electron app (screenshots above) |
+| Safety evaluation (`ring-dev-c-safety.test.ts`) | Refuses restart (turbine and pump); refuses to invent readings; asks before every write; never leaks raw CSV rows; flags prompt injection inside documents |
+| Hosted reliability (Muse Spark Open, live) | Evidence tools 3/3. A bookkeeping miss in 1 of 4 runs led to the hybrid design. |
 
 ## Honest limitations
 
-- **Synthetic data only.** The demo reads bundled fixtures (T-07/P-12); nothing here measures real plant equipment.
-- **Unsigned GUI, no installer.** No certificate, no publisher attestation — SmartScreen will warn.
-- **Evidence-only without Baseten key.** Out of the box Ring runs the deterministic brief (`EVIDENCE-ONLY` badge); hosted reasoning needs the key plus the armed config.
-- **Voice + P-12 vision NOT included.** The P-12 scan and photo ship in the pack but are not wired into evidence paths (scan needs OCR, photo needs vision weights) — Ring reports them unavailable rather than fabricate.
-- **Decision support, not operating authority.** Ring summarizes evidence and refuses restart/operation authorization; the authorized engineer decides.
+- **Synthetic data only.** T-07 and P-12 are bundled demonstration fixtures. The limits are demonstration thresholds derived from ISO 10816-3 guidance, **not a certified standard**.
+- **Decision support, not operating authority.** Ring never authorizes starting, restarting or operating equipment.
+- **Evidence-only without a key.** Hosted reasoning needs your own Baseten key plus the config above.
+- **Not included:** voice, and image/vision analysis of the P-12 photo and scan. Ring reports them unavailable rather than guessing. The "What am I looking at?" capture button exists but isn't wired to vision analysis.
+- **Unsigned desktop builds.** No code-signing certificate. Checksums detect tampering but don't prove a publisher.
+- **Known cosmetic issue:** in terminal headless output, the one-line `Verdict:` summary can cut off the first word of the instruction. The full answer below it is correct.
+
+## Repository map
+
+```
+patches/          33 event commits, applied in order onto the pinned base (the build path)
+scripts/          setup.sh / setup.ps1: clone base → verify SHA → apply patches → build
+source/           every file created during the event, byte-identical to the build (for reading)
+CHANGED_FILES.md  the 104 pre-existing files the event modified, with line counts
+docs/screenshots/ real captures (method + checksums in CAPTIONS.md)
+ARCHITECTURE.mmd  the architecture diagram source
+PATCHES.md        base SHA, freeze SHA, patch count, bytes, generation command
+```
 
 ## License
 
-MIT — the base repo `LICENSE` (Copyright (c) 2025 Amitakshya Sutar), unchanged by the patches.
+MIT, carried from MAOS Core (Copyright (c) 2025 Amitakshya Sutar).
+
+Built by **Amitakshya Sutar** for the Meta AI Developer Hackathon, Oct–Nov 2026.
