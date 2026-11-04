@@ -8,6 +8,8 @@
 
 🌐 **Website: [maos.web.app/indus](https://maos.web.app/indus)** · 📦 **[Download v0.4.0](https://github.com/Amitakshya333/maos-ind_/releases/tag/v0.4.0)**
 
+[![Don't want to spend brain cells? Click here](https://img.shields.io/badge/🧠%20Don't%20want%20to%20spend%20brain%20cells%3F-Click%20here-ff69b4?style=for-the-badge)](docs/NO-BRAINER.md)
+
 **Reasoning by Meta's Muse Spark Open** (`meta-models/muse-spark-open-1026`, via Baseten) · **Terminal + desktop** · **Linux + Windows**
 
 [![Release](https://img.shields.io/github/v/release/Amitakshya333/maos-ind_?label=release)](https://github.com/Amitakshya333/maos-ind_/releases/tag/v0.4.0)
@@ -212,6 +214,8 @@ flowchart TB
 <sub>Green: built this week. Grey: pre-existing MAOS Core. Blue: Meta's model. Amber: where a human or a gate decides. Source: [`ARCHITECTURE.mmd`](ARCHITECTURE.mmd).</sub>
 
 ## Try it
+
+> 🧠 **Don't want to spend brain cells?** The [No-Brainer Guide](docs/NO-BRAINER.md) explains it like you're five.
 
 You need **git**, **Node.js 22+** and **npm**. Leave `BASETEN_API_KEY` unset for the first run. Setup is evidence-only and refuses to run if a key is present.
 
