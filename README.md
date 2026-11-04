@@ -1,6 +1,9 @@
 <div align="center">
 
-<img src="docs/banner.svg" alt="MAOS Industrial: Evidence-first operations software for the plant floor" width="900"/>
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/banner-light.svg"/>
+  <img src="docs/banner.svg" alt="MAOS Industrial: Evidence-first operations software for the plant floor" width="900"/>
+</picture>
 
 ### Now with **Ring**: the industrial agent that knows what it must never do.
 
