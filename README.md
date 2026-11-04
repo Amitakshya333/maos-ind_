@@ -4,6 +4,46 @@
 
 [Demo video — link to be added]
 
+## Screenshots
+
+![Ring CLI home TUI at 100 cols](docs/screenshots/01-cli-home.png)
+Home TUI (real run, evidence-only): CEO banner, operator input card, SYSTEMS panel with T-07 CRITICAL RMS 2.637 — centered 90-col stage at 100 cols.
+
+![Ring answering the turbine question](docs/screenshots/02-ring-turbine.png)
+Ring mode answering the turbine question (real run, evidence-only): `analyze_telemetry` tool chips, CRITICAL verdict line, RMS 2.637, cited CSV source.
+
+![Ring approval card](docs/screenshots/03-approval-card.png)
+Approval card (real run): `/handover` pauses on the bordered approval card with the `Approve ... ? [y/N]` prompt (default No) — answered N here.
+
+![Ring refusal](docs/screenshots/04-refusal.png)
+Refusal in the terminal (real run): a restart request gets the calm fail-closed refusal — no action, no files, headless exit code 2.
+
+![Ring overlay](docs/screenshots/05-gui-overlay.png)
+GUI overlay, `#/ring-overlay` (real headless Electron offscreen capture): the compact always-on-top companion over the same store, empty state with no run attached. No approval card is visible because no live run was attached offscreen — not faked. See `CAPTIONS.md` for the capture log.
+
+Screenshot provenance (commands, exit codes, SHAs): [`CAPTIONS.md`](CAPTIONS.md). Architecture source: [`ARCHITECTURE.mmd`](ARCHITECTURE.mmd).
+
+## How it fits together
+
+```mermaid
+graph TD
+    Employee[Employee - plain-language question] --> RingCLI[Ring CLI and TUI - REPL by default, headless with -p, home screen]
+    Employee --> RingGUI[Ring GUI overlay - Ctrl Shift Space, Allow Deny cards]
+    RingCLI --> AgentLoop[Ring agent loop - threads, skills, registry, approvals]
+    RingGUI --> AgentLoop
+    AgentLoop --> MetaModel[Meta model via Baseten - Muse Spark Open reasoning]
+    AgentLoop --> DetEngine[Deterministic engine - telemetry verdict, audit chain, artifacts]
+    MetaModel --> EvidenceTools[Evidence tools - analyze_telemetry, read_company_document, search_knowledge, verify_export]
+    EvidenceTools --> Findings[Findings - never verdicts]
+    Findings --> DetEngine
+    DetEngine --> ApprovalGate[Approvals gate - human y N, default No, fail-closed]
+    ApprovalGate --> ArtifactsOK[Artifacts - DOCX and MD work orders, audit export]
+    ApprovalGate --> RefusalPath[Refusal path - restart and operation requests]
+    RefusalPath --> CalmRefusal[Calm refusal - decision support only, no files written]
+    DetEngine --> AuditTrail[Tamper-evident audit - every event in maos ring-runs]
+    AuditTrail --> ArtifactsOK
+```
+
 ## What it does
 
 - Ask in plain language; get deterministic verdicts with sources — turbine telemetry, SOP, maintenance note, audit chain.
@@ -19,29 +59,6 @@ The hybrid is deliberate:
 - The 3/4 live reliability finding — the memory-and-plan miss, stable across 3 runs — is what motivated the hybrid: the model proposes, the deterministic engine disposes.
 
 Model id (byte-exact): `meta-models/muse-spark-open-1026` via `https://inference.baseten.co/v1`.
-
-## How it fits together
-
-```text
-employee ── plain-language question ──> Ring
-Ring ── plan + EVIDENCE tool calls ──> Meta model (reasoning)
-  Meta model runs: telemetry / SOP / search / verify
-  Meta model ── findings (never verdicts) ──> Ring
-Ring ── records / approvals / refusal ──> deterministic engine
-  deterministic engine ──> work-order artifacts (approval-gated)
-  deterministic engine ──> tamper-evident audit
-employee <── verdict + sources ── Ring
-```
-
-No other components: the model reasons over evidence; the engine owns state.
-
-## Screenshots
-
-![Ring CLI turbine brief](docs/screenshots/cli-brief.png)
-CLI brief: deterministic CRITICAL verdict, RMS 2.637, EVIDENCE-ONLY badge.
-
-![Ring overlay approval card](docs/screenshots/overlay-approval.png)
-Overlay (Ctrl+Shift+Space): inline Allow/Deny approval card.
 
 ## What existed before vs what we built this week
 
@@ -98,7 +115,6 @@ Unsigned: no certificate, no publisher attestation — Windows SmartScreen will 
 - **Evidence-only without Baseten key.** Out of the box Ring runs the deterministic brief (`EVIDENCE-ONLY` badge); hosted reasoning needs the key plus the armed config.
 - **Voice + P-12 vision NOT included.** The P-12 scan and photo ship in the pack but are not wired into evidence paths (scan needs OCR, photo needs vision weights) — Ring reports them unavailable rather than fabricate.
 - **Decision support, not operating authority.** Ring summarizes evidence and refuses restart/operation authorization; the authorized engineer decides.
-- **No legal clearance beyond documented notices.** MIT license carried from base with per-file attribution intact; confirm licensing, export, and safety-review requirements before operating anything.
 
 ## License
 

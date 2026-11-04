@@ -1,0 +1,16 @@
+graph TD
+    Employee[Employee - plain-language question] --> RingCLI[Ring CLI and TUI - REPL by default, headless with -p, home screen]
+    Employee --> RingGUI[Ring GUI overlay - Ctrl Shift Space, Allow Deny cards]
+    RingCLI --> AgentLoop[Ring agent loop - threads, skills, registry, approvals]
+    RingGUI --> AgentLoop
+    AgentLoop --> MetaModel[Meta model via Baseten - Muse Spark Open reasoning]
+    AgentLoop --> DetEngine[Deterministic engine - telemetry verdict, audit chain, artifacts]
+    MetaModel --> EvidenceTools[Evidence tools - analyze_telemetry, read_company_document, search_knowledge, verify_export]
+    EvidenceTools --> Findings[Findings - never verdicts]
+    Findings --> DetEngine
+    DetEngine --> ApprovalGate[Approvals gate - human y N, default No, fail-closed]
+    ApprovalGate --> ArtifactsOK[Artifacts - DOCX and MD work orders, audit export]
+    ApprovalGate --> RefusalPath[Refusal path - restart and operation requests]
+    RefusalPath --> CalmRefusal[Calm refusal - decision support only, no files written]
+    DetEngine --> AuditTrail[Tamper-evident audit - every event in maos ring-runs]
+    AuditTrail --> ArtifactsOK
