@@ -21,7 +21,7 @@
 ![Data](https://img.shields.io/badge/data-synthetic%20only-f59e0b)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
-**▶ 3-minute demo video:** (https://x.com/SizixAsat9/status/2118121289110208837?a=H0C8M6X7Qlv2SkKBYnY&s=20)
+**▶ Demo video:** (https://x.com/SizixAsat9/status/2118121289110208837?a=H0C8M6X7Qlv2SkKBYnY&s=20)
 
 <img src="docs/screenshots/07-gui-approval.png" alt="Ring pauses for human approval before writing a shift handover" width="760"/>
 
